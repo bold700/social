@@ -278,6 +278,7 @@ nav.navbar {
 <header class="topbar" id="topbar">
   <svg class="logo" viewBox="0 0 32 34" aria-hidden="true"><path fill="var(--primary)" d="M26.118 15.9781C27.9616 15.2318 29.3663 14.1344 30.4198 12.6859C31.4733 11.2373 32 9.52538 32 7.50617C32 5.09191 31.0343 3.20439 29.1029 1.93141C27.2593 0.702332 24.7133 0.0438957 21.3772 0H0V8.2524H6.2332V6.2332H11.9396L0 33.0096H15.7147C20.192 33.0096 23.7915 32.1317 26.513 30.3759C29.2346 28.62 30.5514 26.0302 30.5514 22.6063C30.5514 20.9822 30.1564 19.6653 29.4101 18.524C28.6639 17.3827 27.5665 16.5487 26.118 15.9781ZM21.2016 26.0302C20.0165 26.8642 18.3484 27.2593 16.1975 27.2593H9.34979L12.9931 19.0946H18.0412C21.3333 19.0946 23.0014 20.2359 23.0014 22.4746C23.0014 24.0549 22.3868 25.1962 21.2016 26.0302ZM22.3429 12.4225C21.2455 13.1687 19.6653 13.5638 17.6461 13.5638H15.4513L18.6996 6.27709H19.1824C22.4307 6.27709 24.0549 7.2428 24.0549 9.17421C24.011 10.5789 23.4403 11.6763 22.3429 12.4225Z"/></svg>
   <h1 id="page-title">Resultaten</h1>
+  <button class="btn tonal" id="install" hidden style="height: 32px; padding: 0 16px">Installeer als app</button>
   <button class="icon-btn" id="refresh" aria-label="Vernieuwen">
     <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M17.65 6.35A7.96 7.96 0 0 0 12 4a8 8 0 1 0 7.74 10h-2.08A6 6 0 1 1 12 6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
   </button>
@@ -838,6 +839,11 @@ nav.navbar {
   const pushSupported = () => 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
   const standalone = () => window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches;
   let swReg = null;
+  // Desktop (Chrome/Edge): offer to install as an app with its own window and icon.
+  let installEvt = null;
+  window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); installEvt = e; $('#install').hidden = false; });
+  window.addEventListener('appinstalled', () => { installEvt = null; $('#install').hidden = true; });
+  $('#install').addEventListener('click', async () => { if (!installEvt) return; installEvt.prompt(); await installEvt.userChoice.catch(() => {}); installEvt = null; $('#install').hidden = true; });
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('sw.js').then((r) => { swReg = r; renderPushBox(); }).catch(() => {});
   }

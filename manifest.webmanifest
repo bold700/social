@@ -1,12 +1,29 @@
 {
+  "id": "./",
   "name": "BOLD700 Social",
   "short_name": "B7 Social",
+  "description": "Resultaten, planning en autopilot van BOLD700 Social.",
+  "start_url": "./",
+  "scope": "./",
   "display": "standalone",
   "background_color": "#efe5dc",
   "theme_color": "#efe5dc",
   "icons": [
-    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" },
-    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
   ]
 }
