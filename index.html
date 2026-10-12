@@ -212,6 +212,14 @@ a.item-text { color: var(--on-surface); }
 .plan-sum .v { font-family: var(--font-display); font-size: 22px; line-height: 28px; font-variant-numeric: tabular-nums; }
 .plan-sum .v.zero { color: var(--warn); }
 .plan-sum .hint { font-size: 12px; color: var(--warn); }
+.copy-item { display: grid; gap: 8px; padding: 14px 0; border-top: 1px solid var(--outline-variant); }
+.copy-item.decided { opacity: .7; }
+.copy-top { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.copy-top .pill { margin-left: auto; }
+.ch-for { font-size: 12px; color: var(--on-variant); }
+.copy-why { margin: 0; font-size: 14px; line-height: 20px; }
+.copy-yours { background: var(--surface-cont-high); border-radius: 12px; padding: 12px; }
+.copy-yours p { margin: 4px 0 0; white-space: pre-line; font-size: 14px; line-height: 20px; }
 .media-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; justify-content: space-between; }
 .need .pick-thumb { width: 96px; height: 120px; object-fit: cover; border-radius: 12px; }
 .plan-sum .li-hint { font-size: 12px; color: var(--on-variant); display: inline-flex; align-items: center; gap: 4px; }
@@ -1035,6 +1043,45 @@ nav.navbar {
     renderPipeline();
   }
 
+  // One "Nadoen?" proposal: what worked elsewhere, Kenny's own version, and what he needs to film.
+  function copyCard(c) {
+    const d = el('div', 'copy-item' + (c.status !== 'new' ? ' decided' : ''));
+    const top = el('div', 'copy-top');
+    const a = el('a', 'more', '@' + c.source_handle); a.href = c.source_url; a.target = '_blank'; a.rel = 'noopener';
+    top.append(el('span', 'ch-for', c.account_for), a);
+    if (c.multiple) top.appendChild(el('span', 'pill ok', Math.round(c.multiple) + 'x beter dan normaal'));
+    d.appendChild(top);
+    if (c.views) d.appendChild(el('p', 'note', 'Weergaven: ' + c.views));
+    d.append(el('p', 'copy-why', c.why));
+    const yv = el('div', 'copy-yours'); yv.append(el('b', null, 'Jouw versie'), el('p', null, c.your_version)); d.appendChild(yv);
+    d.append(el('p', 'note', 'Wat je maakt: ' + c.needs));
+    const acts = el('div', 'pactions');
+    if (c.status === 'new') {
+      const y = el('button', 'btn', 'Ja, maken'); const n = el('button', 'tbtn', 'Nee');
+      const decide = async (yes) => {
+        y.disabled = n.disabled = true;
+        try {
+          const res = await fetch(API.replace('action=app', 'action=app_idea'), {
+            method: 'POST', headers: { 'x-app-key': key, 'Content-Type': 'application/json' }, body: JSON.stringify({ id: c.id, yes }),
+          });
+          const j = await res.json().catch(() => ({}));
+          if (!res.ok) throw new Error(j.error || 'HTTP ' + res.status);
+          c.status = yes ? 'yes' : 'no';
+          if (yes && j.item) { c.supply_nr = j.nr; data.supply = (data.supply || []).filter((x) => x.nr !== j.nr).concat([{ ...j.item, klaar: j.item.klaar ? 'ja' : 'nee' }]); renderSupply(); }
+          store.set('b7data', JSON.stringify(data)); renderPipeline();
+        } catch (e) { y.disabled = n.disabled = false; acts.appendChild(el('p', 'error', 'Lukte niet. Probeer het opnieuw.')); }
+      };
+      y.addEventListener('click', () => decide(true)); n.addEventListener('click', () => decide(false));
+      acts.append(y, n);
+    } else if (c.status === 'yes') {
+      acts.appendChild(el('p', 'note', 'Staat op Aanleveren. Lever je het aan, dan maak ik de post.'));
+    } else {
+      acts.appendChild(el('p', 'note', 'Overgeslagen.'));
+    }
+    d.appendChild(acts);
+    return d;
+  }
+
   // What is not planned yet but will become a post: Kenny's work material, special plans and topic ideas.
   function renderPipeline() {
     const pl = data.pipeline || {};
@@ -1045,6 +1092,13 @@ nav.navbar {
       const c = el('article', 'card'); c.append(el('h2', 'title', 'Speciaal gepland'));
       const ul = el('ul', 'pipe-list'); const li = el('li'); li.append(el('span', null, sp.idea), el('span', 'k', sp.status || '')); ul.appendChild(li);
       c.appendChild(ul); blocks.push(c);
+    }
+    const copy = pl.copy || [];
+    if (copy.length) {
+      const cc = el('article', 'card');
+      cc.append(el('h2', 'title', 'Nadoen?'), el('p', 'note', 'Reels van grote accounts die veel beter liepen dan normaal. Jij maakt jouw eigen versie, met je eigen werk.'));
+      copy.forEach((c) => cc.appendChild(copyCard(c)));
+      blocks.push(cc);
     }
     const work = pl.work || [];
     const c2 = el('article', 'card');
