@@ -276,6 +276,12 @@ a.item-text { color: var(--on-surface); }
 .edit-area { width: 100%; min-height: 140px; border-radius: 8px; border: 1px solid var(--outline); background: var(--surface); color: var(--on-surface); padding: 12px; font: inherit; font-size: 14px; line-height: 20px; resize: vertical; }
 .edit-area:focus { outline: 2px solid var(--primary); border-color: transparent; }
 .ppost.cancelled .strip, .ppost.cancelled .ptext { opacity: .45; }
+.chan { display: grid; gap: 8px; }
+.chan:not(.solo) { border-top: 1px solid var(--outline-variant); padding-top: 12px; }
+.chan-h { display: flex; gap: 8px; align-items: center; font-size: 12px; color: var(--on-variant); }
+.chan.cancelled .ptext { opacity: .45; }
+.chans { display: grid; gap: 12px; }
+@media (min-width: 840px) { .ppost.combo { grid-column: 1 / -1; } .chans { grid-template-columns: 1fr 1fr; gap: 24px; } .chans .chan + .chan { border-left: 1px solid var(--outline-variant); padding-left: 24px; } }
 .pipe-list { margin: 0; padding: 0; list-style: none; display: grid; }
 .pipe-list li { padding: 10px 0; border-bottom: 1px solid var(--outline-variant); display: grid; gap: 2px; }
 .pipe-list li:last-child { border-bottom: 0; padding-bottom: 0; }
@@ -813,26 +819,29 @@ nav.navbar {
     requestAnimationFrame(() => { slides.scrollLeft = start * slides.clientWidth; });
   }
 
-  function planCard(r) {
+  // One card per post. A LinkedIn mirror of an Instagram post (same source) is shown inside the same card.
+  function planCard(r, mirror) {
     const k = chKey(r);
-    const card = el('article', 'card ppost');
+    const card = el('article', 'card ppost' + (mirror ? ' combo' : ''));
     const head = el('div', 'head');
     const time = String(r.scheduled || '').slice(11, 16);
-    head.append(el('b', null, time), chIcon(k), el('span', null, (k === 'linkedin' ? 'LinkedIn' : k) + ' · ' + r.type));
-    const [t, cls] = STATUS[r.status] || [r.status, ''];
-    const p = el('span', 'pill ' + cls, t); p.style.marginLeft = 'auto'; head.appendChild(p);
+    head.append(el('b', null, time), chIcon(k));
+    if (mirror) head.appendChild(chIcon('linkedin'));
+    head.appendChild(el('span', null, (k === 'linkedin' ? 'LinkedIn' : k) + (mirror ? ' + LinkedIn' : '') + ' · ' + r.type));
+    if (!mirror) { const [t, cls] = STATUS[r.status] || [r.status, '']; const p = el('span', 'pill ' + cls, t); p.style.marginLeft = 'auto'; head.appendChild(p); }
     card.appendChild(head);
     const collab = (r.collab || []).filter(Boolean);
     if (collab.length) card.appendChild(el('p', 'note', 'Samen met ' + collab.join(', ') + ' (collab)'));
-    const media = r.status === 'waiting' ? [] : (r.media || []).filter(Boolean);
-    if (r.status === 'waiting') {
+    const waitR = r.status === 'waiting' ? r : mirror && mirror.status === 'waiting' ? mirror : null;
+    if (waitR) {
       const box = el('div', 'need');
-      box.append(el('b', null, 'Wacht op beeld'), el('p', 'note', r.needs || 'Nog geen passend beeld.'),
-        el('p', 'note', 'Zonder beeld schuift deze post een week op.'));
-      const it = (data.supply || []).find((x) => x.nr === r.supply_nr);
+      box.append(el('b', null, 'Wacht op beeld'), el('p', 'note', waitR.needs || 'Nog geen passend beeld.'),
+        el('p', 'note', 'Zonder beeld schuift deze post' + (mirror ? ' (beide kanalen)' : '') + ' een week op.'));
+      const it = (data.supply || []).find((x) => x.nr === waitR.supply_nr);
       if (it) { const pb = el('button', 'btn', 'Kies of upload beeld'); pb.addEventListener('click', () => openPicker(it)); box.appendChild(pb); }
       card.appendChild(box);
     }
+    const media = r.status === 'waiting' ? [] : (r.media || []).filter(Boolean);
     if (media.length) {
       const strip = el('div', 'strip');
       const label = (k === 'linkedin' ? 'LinkedIn' : k) + ' · ' + fWhen(String(r.scheduled).replace('T', ' '));
@@ -846,18 +855,37 @@ nav.navbar {
         strip.appendChild(b);
       });
       card.appendChild(strip);
-      card.appendChild(el('p', 'note', media.length === 1 ? (isVideo(media[0]) ? '1 video' : '1 foto') : media.length + ' beelden' + (r.doc_title ? ' · ' + r.doc_title : '')));
+      const docT = r.doc_title || (mirror && mirror.doc_title);
+      card.appendChild(el('p', 'note', (media.length === 1 ? (isVideo(media[0]) ? '1 video' : '1 foto') : media.length + ' beelden') + (mirror ? ' · zelfde beeld op beide kanalen' : '') + (docT && !mirror ? ' · ' + docT : '')));
+    }
+    if (mirror) {
+      const chans = el('div', 'chans');
+      chans.append(chanBlock(r, true), chanBlock(mirror, true));
+      card.appendChild(chans);
+    } else card.appendChild(chanBlock(r, false));
+    return card;
+  }
+
+  // Text, status and buttons for one channel of a post.
+  function chanBlock(r, sub) {
+    const box = el('div', sub ? 'chan' : 'chan solo');
+    const k = chKey(r);
+    if (sub) {
+      const h = el('div', 'chan-h');
+      h.append(chIcon(k), el('span', null, (k === 'linkedin' ? 'LinkedIn' : 'Instagram') + ' · ' + String(r.scheduled || '').slice(11, 16)));
+      const [t, cls] = STATUS[r.status] || [r.status, '']; const p = el('span', 'pill ' + cls, t); p.style.marginLeft = 'auto'; h.appendChild(p);
+      box.appendChild(h);
     }
     const txt = el('p', 'ptext', (r.text || '').trim().replace(/\n{2,}/g, '\n') || '(geen tekst)');
-    card.appendChild(txt);
+    box.appendChild(txt);
     if ((r.text || '').split('\n').length > 3 || (r.text || '').length > 160) {
       const m = el('button', 'more', 'Hele tekst');
       m.addEventListener('click', () => { const o = txt.classList.toggle('open'); m.textContent = o ? 'Minder' : 'Hele tekst'; });
-      card.appendChild(m);
+      box.appendChild(m);
     }
-    if (r.permalink) { const a = el('a', 'more', 'Bekijk op Instagram'); a.href = r.permalink; a.target = '_blank'; a.rel = 'noopener'; card.appendChild(a); }
-    if (r.edited && r.status !== 'cancelled') card.appendChild(el('p', 'note', 'Aangepast door jou in de app'));
-    if (r.status === 'cancelled') card.classList.add('cancelled');
+    if (r.permalink) { const a = el('a', 'more', 'Bekijk op Instagram'); a.href = r.permalink; a.target = '_blank'; a.rel = 'noopener'; box.appendChild(a); }
+    if (r.edited && r.status !== 'cancelled') box.appendChild(el('p', 'note', 'Aangepast door jou in de app'));
+    if (r.status === 'cancelled') box.classList.add('cancelled');
     const acts = el('div', 'pactions');
     if (r.status === 'queued') {
       const eb = el('button', 'tbtn', 'Tekst aanpassen');
@@ -887,8 +915,8 @@ nav.navbar {
       });
       acts.append(tb);
     }
-    if (acts.childNodes.length) card.appendChild(acts);
-    return card;
+    if (acts.childNodes.length) box.appendChild(acts);
+    return box;
   }
 
   async function postEdit(r, body) {
@@ -934,7 +962,12 @@ nav.navbar {
     if (!rows.length) { renderPipeline(); list.replaceChildren(el('p', 'note', planFilter === 'motokenn00' ? 'Voor motokenn00 staat nog niets klaar. Zet ritfoto\'s of clips in de motokenn00-map, dan plant het systeem ze in.' : 'Niets gepland voor dit kanaal.')); return; }
     const out = []; let lastDay = '';
     const tomorrow = new Date(Date.parse(today + 'T12:00:00Z') + 86400000).toISOString().slice(0, 10);
+    // Pair LinkedIn mirrors with their Instagram post (only when both are shown).
+    const byId = {}; rows.forEach((r) => { if (r.channel === 'instagram') byId[r.id] = r; });
+    const mirrorOf = {}; const paired = new Set();
+    rows.forEach((r) => { if (r.channel === 'linkedin' && r.source && byId[r.source] && !mirrorOf[r.source]) { mirrorOf[r.source] = r; paired.add(r.id); } });
     rows.forEach((r) => {
+      if (r.channel === 'linkedin' && paired.has(r.id)) return;
       const day = String(r.scheduled).slice(0, 10);
       if (day !== lastDay) {
         lastDay = day;
@@ -942,7 +975,7 @@ nav.navbar {
         if (day === today || day === tomorrow) h.appendChild(el('span', null, DAYS[pDay(day).getUTCDay()] + ' ' + fDate(day)));
         out.push(h);
       }
-      out.push(planCard(r));
+      out.push(planCard(r, r.channel === 'instagram' ? mirrorOf[r.id] : null));
     });
     list.replaceChildren(...out);
     renderPipeline();
