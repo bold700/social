@@ -192,6 +192,12 @@ a.item-text { color: var(--on-surface); }
 .check .t { font-size: 14px; }
 .check .s { font-size: 12px; color: var(--on-variant); }
 .check.done .t { color: var(--on-variant); text-decoration: line-through; }
+.done-h { display: flex; align-items: center; gap: 12px; margin: 16px 0 4px; font-size: 12px; font-weight: 500; letter-spacing: 0.5px; text-transform: uppercase; color: var(--on-variant); }
+.done-h::after { content: ""; flex: 1; height: 1px; background: var(--outline-variant); }
+.check .thumbrow { display: flex; gap: 10px; align-items: center; margin-top: 8px; }
+.check .thumbrow img { width: 44px; height: 44px; border-radius: 8px; object-fit: cover; flex: none; }
+.check .used { font-size: 12px; color: var(--on-variant); }
+.check.done .used { text-decoration: none; }
 .btn { display: inline-flex; align-items: center; justify-content: center; height: 40px; padding: 0 24px; border-radius: 20px; background: var(--primary); color: var(--on-primary); font-weight: 500; font-size: 14px; letter-spacing: 0.1px; text-decoration: none; border: 0; cursor: pointer; width: fit-content; }
 .btn.tonal { background: var(--primary-cont); color: var(--primary); }
 
@@ -297,7 +303,7 @@ nav.navbar {
       <h2 class="title">Foto's die nog nodig zijn</h2>
       <div class="big-row"><span class="big" id="sup-done">–</span><span class="note" id="sup-total"></span></div>
       <div class="progress"><span id="sup-bar" style="width: 0"></span></div>
-      <p class="note">Zet de foto in de map _beeld voor carrousels en tik hem hieronder af.</p>
+      <p class="note">Zet de foto in Werk van vandaag of _beeld voor carrousels. Het systeem herkent hem, vinkt hem af en laat zien waarvoor hij gebruikt wordt.</p>
       <a class="btn" href="https://docs.google.com/spreadsheets/d/1CAeRX-7b9v8JYetQZffN3DG6ovmXw-64EInAfVXvAmE/edit#gid=1434862705" target="_blank" rel="noopener">Open de sheet</a>
     </article>
     <article class="card"><div id="supply"></div></article>
@@ -707,19 +713,36 @@ nav.navbar {
     $('#sup-total').textContent = 'van ' + s.length + ' klaar';
     $('#sup-bar').style.width = s.length ? (done / s.length) * 100 + '%' : '0%';
     const tick = '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z"/></svg>';
-    $('#supply').replaceChildren(...(s.length ? s.map((r) => {
+    const row = (r) => {
       const on = r.klaar === 'ja';
-      const row = el('button', 'check' + (on ? ' done' : ''));
-      row.type = 'button';
-      row.setAttribute('role', 'checkbox');
-      row.setAttribute('aria-checked', String(on));
+      const b = el('button', 'check' + (on ? ' done' : ''));
+      b.type = 'button';
+      b.setAttribute('role', 'checkbox');
+      b.setAttribute('aria-checked', String(on));
       const box = el('span', 'box' + (on ? ' on' : ''));
       if (on) box.innerHTML = tick;
-      const t = el('div'); t.append(el('div', 't', r.wat), el('div', 's', r.waarvoor));
-      row.append(box, t);
-      row.addEventListener('click', () => toggleSupply(r));
-      return row;
-    }) : [el('p', 'note', 'Niets meer nodig.')]));
+      const t = el('div');
+      t.append(el('div', 't', r.wat), el('div', 's', r.waarvoor));
+      if (on && (r.photo_url || r.used_for || r.photo_name)) {
+        const tr = el('div', 'thumbrow');
+        if (r.photo_url) { const img = el('img'); img.src = r.photo_url; img.alt = ''; img.loading = 'lazy'; tr.appendChild(img); }
+        const u = el('div', 'used');
+        u.append(el('div', null, r.used_for ? 'Gebruikt voor: ' + r.used_for : 'Foto gevonden'), el('div', null, r.photo_name || ''));
+        tr.appendChild(u);
+        t.appendChild(tr);
+      } else if (on) {
+        t.appendChild(el('div', 'used', r.updated_by === 'app' ? 'Afgevinkt door jou' : 'Afgevinkt'));
+      }
+      b.append(box, t);
+      b.addEventListener('click', () => toggleSupply(r));
+      return b;
+    };
+    const open = s.filter((r) => r.klaar !== 'ja');
+    const closed = s.filter((r) => r.klaar === 'ja');
+    const out = [];
+    if (open.length) out.push(...open.map(row)); else out.push(el('p', 'note', 'Alles is binnen. Nieuwe foto’s verschijnen hier vanzelf.'));
+    if (closed.length) { out.push(el('div', 'done-h', 'Afgehandeld (' + closed.length + ')')); out.push(...closed.map(row)); }
+    $('#supply').replaceChildren(...out);
   }
 
   // Tick a photo off: show it at once, save it, undo when saving fails.
