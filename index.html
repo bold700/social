@@ -281,6 +281,10 @@ a.item-text { color: var(--on-surface); }
 .pipe-list li:last-child { border-bottom: 0; padding-bottom: 0; }
 .pipe-list .k { font-size: 12px; color: var(--on-variant); }
 
+.need { border: 2px dashed var(--outline); border-radius: 12px; padding: 16px; display: grid; gap: 10px; justify-items: start; }
+.need b { font-weight: 500; }
+.need .note { margin: 0; }
+
 /* Chat with Claude */
 .fab { position: fixed; right: 16px; bottom: calc(96px + env(safe-area-inset-bottom, 0px)); z-index: 12; height: 56px; padding: 0 20px 0 16px; border-radius: 16px; border: 0; background: var(--primary); color: var(--on-primary); display: inline-flex; align-items: center; gap: 10px; font-size: 15px; font-weight: 500; box-shadow: 0 3px 8px rgba(43, 42, 40, .25); cursor: pointer; }
 .fab svg { width: 22px; height: 22px; }
@@ -820,7 +824,15 @@ nav.navbar {
     card.appendChild(head);
     const collab = (r.collab || []).filter(Boolean);
     if (collab.length) card.appendChild(el('p', 'note', 'Samen met ' + collab.join(', ') + ' (collab)'));
-    const media = (r.media || []).filter(Boolean);
+    const media = r.status === 'waiting' ? [] : (r.media || []).filter(Boolean);
+    if (r.status === 'waiting') {
+      const box = el('div', 'need');
+      box.append(el('b', null, 'Wacht op beeld'), el('p', 'note', r.needs || 'Nog geen passend beeld.'),
+        el('p', 'note', 'Zonder beeld schuift deze post een week op.'));
+      const it = (data.supply || []).find((x) => x.nr === r.supply_nr);
+      if (it) { const pb = el('button', 'btn', 'Kies of upload beeld'); pb.addEventListener('click', () => openPicker(it)); box.appendChild(pb); }
+      card.appendChild(box);
+    }
     if (media.length) {
       const strip = el('div', 'strip');
       const label = (k === 'linkedin' ? 'LinkedIn' : k) + ' · ' + fWhen(String(r.scheduled).replace('T', ' '));
@@ -898,11 +910,12 @@ nav.navbar {
   function renderPlanning() {
     const all = (data.planning || []).slice().sort((a, b) => String(a.scheduled).localeCompare(String(b.scheduled)));
     const today = todayAms();
-    const open = all.filter((r) => r.status === 'queued' || r.status === 'processing' || r.status === 'failed');
+    const open = all.filter((r) => r.status === 'waiting' || r.status === 'queued' || r.status === 'processing' || r.status === 'failed');
+    const waiting = open.filter((r) => r.status === 'waiting').length;
     const count = (k) => open.filter((r) => k === 'all' || chKey(r) === k).length;
     $('#plan-title').textContent = open.length + (open.length === 1 ? ' bericht gepland' : ' berichten gepland');
     const last = open.length ? open[open.length - 1].scheduled : null;
-    $('#plan-note').textContent = last ? 'Alle kanalen, tot en met ' + fWhen(String(last).slice(0, 10)) + '.' : 'Er staat nu niets klaar.';
+    $('#plan-note').textContent = (last ? 'Alle kanalen, tot en met ' + fWhen(String(last).slice(0, 10)) + '.' : 'Er staat nu niets klaar.') + (waiting ? ' ' + waiting + ' wacht' + (waiting === 1 ? '' : 'en') + ' nog op beeld van jou.' : '');
     $('#plan-sum').replaceChildren(...CHANNELS.filter((c) => c.id !== 'all').map((c) => {
       const d = el('div'); const n = count(c.id);
       const l = el('span', 'l'); l.append(chIcon(c.id), document.createTextNode(c.label));
@@ -976,7 +989,7 @@ nav.navbar {
   }
 
   // Autopilot
-  const STATUS = { published: ['Live', 'ok'], queued: ['Gepland', ''], processing: ['Bezig', 'warn'], failed: ['Mislukt', 'bad'], cancelled: ['Niet posten', ''] };
+  const STATUS = { waiting: ['Wacht op beeld', 'warn'], published: ['Live', 'ok'], queued: ['Gepland', ''], processing: ['Bezig', 'warn'], failed: ['Mislukt', 'bad'], cancelled: ['Niet posten', ''] };
   function renderAutopilot() {
     $('#channels').replaceChildren(...(data.autopilot || []).map((c) => {
       const card = el('article', 'card');
