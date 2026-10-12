@@ -283,8 +283,8 @@ a.item-text { color: var(--on-surface); }
 .ptile:focus-visible .im, .ptile:hover .im { outline: 3px solid var(--primary); outline-offset: 1px; }
 
 /* Planning: actions, pipeline */
-.pactions { display: flex; gap: 8px; flex-wrap: wrap; }
-.tbtn { height: 36px; padding: 0 14px; border-radius: 18px; border: 1px solid var(--outline-variant); background: transparent; color: var(--primary); font-size: 14px; font-weight: 500; cursor: pointer; }
+.pactions { display: flex; gap: 6px; flex-wrap: wrap; }
+.tbtn { height: 36px; padding: 0 10px; white-space: nowrap; border-radius: 18px; border: 1px solid var(--outline-variant); background: transparent; color: var(--primary); font-size: 14px; font-weight: 500; cursor: pointer; }
 .tbtn.danger { color: var(--bad); }
 .tbtn:disabled { opacity: .5; cursor: default; }
 .edit-area { width: 100%; min-height: 140px; border-radius: 8px; border: 1px solid var(--outline); background: var(--surface); color: var(--on-surface); padding: 12px; font: inherit; font-size: 16px; line-height: 22px; resize: vertical; }
@@ -881,28 +881,29 @@ nav.navbar {
       });
       card.appendChild(strip);
       const docT = r.doc_title || (mirror && mirror.doc_title);
-      const mrow = el('div', 'media-row');
-      mrow.appendChild(el('p', 'note', (media.length === 1 ? (isVideo(media[0]) ? '1 video' : '1 foto') : media.length + ' beelden') + (mirror ? ' · zelfde beeld op beide kanalen' : '') + (docT && !mirror ? ' · ' + docT : '')));
-      if (r.status === 'queued' && r.type !== 'Carrousel') {
-        const sb = el('button', 'tbtn', 'Ander beeld');
-        sb.addEventListener('click', () => openPicker(null, {
-          title: 'Ander beeld', sub: 'Kies een foto of video, of upload een nieuwe. De oude gaat eruit.',
-          onChoose: (ph) => swapMedia(r, mirror, ph),
-        }));
-        mrow.appendChild(sb);
-      }
-      card.appendChild(mrow);
+      card.appendChild(el('p', 'note', (media.length === 1 ? (isVideo(media[0]) ? '1 video' : '1 foto') : media.length + ' beelden') + (mirror ? ' · zelfde beeld op beide kanalen' : '') + (docT && !mirror ? ' · ' + docT : '')));
     }
     if (mirror) {
       const chans = el('div', 'chans');
-      chans.append(chanBlock(r, true), chanBlock(mirror, true));
+      chans.append(chanBlock(r, true, swapFor(r, mirror)), chanBlock(mirror, true));
       card.appendChild(chans);
-    } else card.appendChild(chanBlock(r, false));
+    } else card.appendChild(chanBlock(r, false, swapFor(r, null)));
     return card;
   }
 
+  // "Ander beeld" button for a planned photo or reel (not for carousels).
+  function swapFor(r, mirror) {
+    if (r.status !== 'queued' || r.type === 'Carrousel' || !(r.media || []).length) return null;
+    const sb = el('button', 'tbtn', 'Ander beeld');
+    sb.addEventListener('click', () => openPicker(null, {
+      title: 'Ander beeld', sub: 'Kies een foto of video, of upload een nieuwe. De oude gaat eruit.',
+      onChoose: (ph) => swapMedia(r, mirror, ph),
+    }));
+    return sb;
+  }
+
   // Text, status and buttons for one channel of a post.
-  function chanBlock(r, sub) {
+  function chanBlock(r, sub, extraBtn) {
     const box = el('div', sub ? 'chan' : 'chan solo');
     const k = chKey(r);
     if (sub) {
@@ -923,7 +924,7 @@ nav.navbar {
     if (r.status === 'cancelled') box.classList.add('cancelled');
     const acts = el('div', 'pactions');
     if (r.status === 'queued') {
-      const eb = el('button', 'tbtn', 'Tekst aanpassen');
+      const eb = el('button', 'tbtn', 'Tekst');
       eb.addEventListener('click', () => {
         const ta = el('textarea', 'edit-area'); ta.value = r.text || '';
         const save = el('button', 'btn', 'Opslaan'); const cancel = el('button', 'tbtn', 'Annuleren');
@@ -941,7 +942,7 @@ nav.navbar {
         nb.disabled = true;
         if (await postEdit(r, { cancel: true })) { r.status = 'cancelled'; r.edited = true; renderPlanning(); } else nb.disabled = false;
       });
-      acts.append(eb, nb);
+      if (extraBtn) acts.append(extraBtn, eb, nb); else acts.append(eb, nb);
     } else if (r.status === 'cancelled') {
       const tb = el('button', 'tbtn', 'Toch posten');
       tb.addEventListener('click', async () => {
