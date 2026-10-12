@@ -212,6 +212,8 @@ a.item-text { color: var(--on-surface); }
 .plan-sum .v { font-family: var(--font-display); font-size: 22px; line-height: 28px; font-variant-numeric: tabular-nums; }
 .plan-sum .v.zero { color: var(--warn); }
 .plan-sum .hint { font-size: 12px; color: var(--warn); }
+.media-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; justify-content: space-between; }
+.need .pick-thumb { width: 96px; height: 120px; object-fit: cover; border-radius: 12px; }
 .plan-sum .li-hint { font-size: 12px; color: var(--on-variant); display: inline-flex; align-items: center; gap: 4px; }
 .plan-sum .li-hint .ch-ico { transform: scale(.85); }
 .day-h { font-size: 14px; font-weight: 500; margin: 8px 0 -8px; display: flex; gap: 8px; align-items: baseline; }
@@ -840,10 +842,17 @@ nav.navbar {
     const waitR = r.status === 'waiting' ? r : mirror && mirror.status === 'waiting' ? mirror : null;
     if (waitR) {
       const box = el('div', 'need');
-      box.append(el('b', null, 'Wacht op beeld'), el('p', 'note', waitR.needs || 'Nog geen passend beeld.'),
-        el('p', 'note', 'Zonder beeld schuift deze post' + (mirror ? ' (beide kanalen)' : '') + ' een week op.'));
       const it = (data.supply || []).find((x) => x.nr === waitR.supply_nr);
-      if (it) { const pb = el('button', 'btn', 'Kies of upload beeld'); pb.addEventListener('click', () => openPicker(it)); box.appendChild(pb); }
+      if (it && it.photo_id) {
+        box.appendChild(el('b', null, 'Nieuw beeld gekozen'));
+        if (it.photo_url) { const pi = el('img', 'pick-thumb'); pi.src = it.photo_url; pi.alt = ''; pi.referrerPolicy = 'no-referrer'; box.appendChild(pi); }
+        box.append(el('p', 'note', it.photo_name || ''), el('p', 'note', 'Ik zet het binnen een uur in de post (tussen 8 en 22 uur).'));
+        const pb = el('button', 'tbtn', 'Toch een ander beeld'); pb.addEventListener('click', () => openPicker(it)); box.appendChild(pb);
+      } else {
+        box.append(el('b', null, 'Wacht op beeld'), el('p', 'note', waitR.needs || 'Nog geen passend beeld.'),
+          el('p', 'note', 'Zonder beeld schuift deze post' + (mirror ? ' (beide kanalen)' : '') + ' een week op.'));
+        if (it) { const pb = el('button', 'btn', 'Kies of upload beeld'); pb.addEventListener('click', () => openPicker(it)); box.appendChild(pb); }
+      }
       card.appendChild(box);
     }
     const media = r.status === 'waiting' ? [] : (r.media || []).filter(Boolean);
@@ -861,7 +870,17 @@ nav.navbar {
       });
       card.appendChild(strip);
       const docT = r.doc_title || (mirror && mirror.doc_title);
-      card.appendChild(el('p', 'note', (media.length === 1 ? (isVideo(media[0]) ? '1 video' : '1 foto') : media.length + ' beelden') + (mirror ? ' · zelfde beeld op beide kanalen' : '') + (docT && !mirror ? ' · ' + docT : '')));
+      const mrow = el('div', 'media-row');
+      mrow.appendChild(el('p', 'note', (media.length === 1 ? (isVideo(media[0]) ? '1 video' : '1 foto') : media.length + ' beelden') + (mirror ? ' · zelfde beeld op beide kanalen' : '') + (docT && !mirror ? ' · ' + docT : '')));
+      if (r.status === 'queued' && r.type !== 'Carrousel') {
+        const sb = el('button', 'tbtn', 'Ander beeld');
+        sb.addEventListener('click', () => openPicker(null, {
+          title: 'Ander beeld', sub: 'Kies een foto of video, of upload een nieuwe. De oude gaat eruit.',
+          onChoose: (ph) => swapMedia(r, mirror, ph),
+        }));
+        mrow.appendChild(sb);
+      }
+      card.appendChild(mrow);
     }
     if (mirror) {
       const chans = el('div', 'chans');
@@ -922,6 +941,26 @@ nav.navbar {
     }
     if (acts.childNodes.length) box.appendChild(acts);
     return box;
+  }
+
+  // Swap a post's photo/video: the post waits until the hourly task has put the new file in.
+  async function swapMedia(r, mirror, ph) {
+    $('#plan-note').textContent = 'Beeld vervangen…';
+    try {
+      const res = await fetch(API.replace('action=app', 'action=app_post_media'), {
+        method: 'POST', headers: { 'x-app-key': key, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ channel: r.channel, id: r.id, photo_id: ph.id, photo_name: ph.name }),
+      });
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(j.error || ('HTTP ' + res.status));
+      const item = { ...(j.item || {}), klaar: 'ja', photo_url: ph.thumb || (j.item && j.item.photo_url) };
+      data.supply = (data.supply || []).filter((x) => x.nr !== j.nr).concat([item]);
+      [r, mirror].forEach((x) => { if (x && (x.status === 'queued' || x.status === 'waiting')) Object.assign(x, { status: 'waiting', supply_nr: j.nr, needs: 'Vervangen door ' + ph.name, edited: true }); });
+      store.set('b7data', JSON.stringify(data));
+      renderPlanning(); renderSupply();
+    } catch (e) {
+      $('#plan-note').textContent = 'Beeld vervangen lukte niet: ' + e.message;
+    }
   }
 
   async function postEdit(r, body) {
@@ -1203,11 +1242,13 @@ nav.navbar {
 
   // Pick a photo from Drive (Beeldbank + Werk van vandaag) for a checklist item.
   let photoCache = null;
-  async function openPicker(r) {
+  // r = checklist item (pick for that item), or opts.onChoose(photo) for any other use (e.g. swap a post's image).
+  async function openPicker(r, opts) {
+    opts = opts || {};
     const scrim = el('div', 'scrim');
     const sheet = el('div', 'sheet'); sheet.setAttribute('role', 'dialog'); sheet.setAttribute('aria-modal', 'true'); sheet.setAttribute('aria-label', 'Kies een foto');
     const head = el('div', 'sheet-head');
-    const ht = el('h2', null, 'Kies een foto'); ht.appendChild(el('p', null, r.wat));
+    const ht = el('h2', null, opts.title || 'Kies een foto'); ht.appendChild(el('p', null, opts.sub || (r && r.wat) || ''));
     const close = el('button', 'icon-btn'); close.setAttribute('aria-label', 'Sluiten');
     close.innerHTML = '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>';
     head.append(ht, close);
@@ -1224,8 +1265,9 @@ nav.navbar {
       if (!f) return;
       ust.textContent = 'Uploaden… ' + f.name;
       try {
-        const res = await uploadFile(f, r.nr);
+        const res = await uploadFile(f, opts.onChoose ? null : r.nr);
         photoCache = null;
+        if (opts.onChoose) { shut(); opts.onChoose({ id: 'storage:' + res.path, name: f.name, thumb: res.url, video: (f.type || '').startsWith('video/') }); return; }
         Object.assign(r, { klaar: 'ja', photo_id: 'storage:' + res.path, photo_name: f.name, photo_url: res.url, used_for: null, updated_by: 'app' });
         shut(); renderSupply(); store.set('b7data', JSON.stringify(data));
       } catch (e) {
@@ -1247,7 +1289,7 @@ nav.navbar {
         if (!res.ok) throw new Error('HTTP ' + res.status);
         photoCache = (await res.json()).photos || [];
       }
-      const used = new Set((data.supply || []).filter((x) => x.nr !== r.nr).map((x) => x.photo_id).filter(Boolean));
+      const used = new Set((data.supply || []).filter((x) => !r || x.nr !== r.nr).map((x) => x.photo_id).filter(Boolean));
       const groups = {};
       photoCache.forEach((p) => { (groups[p.folder] = groups[p.folder] || []).push(p); });
       const out = [];
@@ -1260,7 +1302,7 @@ nav.navbar {
           if (p.video) { const v = el('video'); v.src = p.thumb + '#t=0.5'; v.muted = true; v.playsInline = true; v.preload = 'metadata'; im.appendChild(v); }
           else { const img = el('img'); img.src = p.thumb; img.alt = ''; img.loading = 'lazy'; img.referrerPolicy = 'no-referrer'; im.appendChild(img); }
           t.append(im, el('span', null, (used.has(p.id) ? '✓ al gebruikt · ' : '') + p.name));
-          t.addEventListener('click', () => { shut(); pickPhoto(r, p); });
+          t.addEventListener('click', () => { shut(); if (opts.onChoose) opts.onChoose(p); else pickPhoto(r, p); });
           grid.appendChild(t);
         });
         out.push(grid);
