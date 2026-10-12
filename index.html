@@ -299,7 +299,9 @@ input, textarea, select { font-size: max(16px, 1em); }
 .chan-h { display: flex; gap: 8px; align-items: center; font-size: 12px; color: var(--on-variant); }
 .chan.cancelled .ptext { opacity: .45; }
 .chans { display: grid; gap: 12px; }
-@media (min-width: 840px) { .ppost.combo { grid-column: 1 / -1; } .chans { grid-template-columns: 1fr 1fr; gap: 24px; } .chans .chan + .chan { border-left: 1px solid var(--outline-variant); padding-left: 24px; } }
+.chan.compact { grid-template-columns: 1fr auto; align-items: center; }
+.chan.compact .pactions { justify-content: flex-end; }
+
 .pipe-list { margin: 0; padding: 0; list-style: none; display: grid; }
 .pipe-list li { padding: 10px 0; border-bottom: 1px solid var(--outline-variant); display: grid; gap: 2px; }
 .pipe-list li:last-child { border-bottom: 0; padding-bottom: 0; }
@@ -886,11 +888,11 @@ nav.navbar {
       });
       card.appendChild(strip);
       const docT = r.doc_title || (mirror && mirror.doc_title);
-      card.appendChild(el('p', 'note', (media.length === 1 ? (isVideo(media[0]) ? '1 video' : '1 foto') : media.length + ' beelden') + (mirror ? ' · zelfde beeld op beide kanalen' : '') + (docT && !mirror ? ' · ' + docT : '')));
+      card.appendChild(el('p', 'note', (media.length === 1 ? (isVideo(media[0]) ? '1 video' : '1 foto') : media.length + ' beelden') + (mirror ? ' · zelfde beeld en tekst op beide kanalen' : '') + (docT && !mirror ? ' · ' + docT : '')));
     }
     if (mirror) {
       const chans = el('div', 'chans');
-      chans.append(chanBlock(r, true, swapFor(r, mirror)), chanBlock(mirror, true));
+      chans.append(chanBlock(r, true, swapFor(r, mirror)), chanBlock(mirror, true, null, true));
       card.appendChild(chans);
     } else card.appendChild(chanBlock(r, false, swapFor(r, null)));
     return card;
@@ -908,7 +910,7 @@ nav.navbar {
   }
 
   // Text, status and buttons for one channel of a post.
-  function chanBlock(r, sub, extraBtn) {
+  function chanBlock(r, sub, extraBtn, compact) {
     const box = el('div', sub ? 'chan' : 'chan solo');
     const k = chKey(r);
     if (sub) {
@@ -918,8 +920,9 @@ nav.navbar {
       box.appendChild(h);
     }
     const txt = el('p', 'ptext', (r.text || '').trim().replace(/\n{2,}/g, '\n') || '(geen tekst)');
-    box.appendChild(txt);
-    if ((r.text || '').split('\n').length > 3 || (r.text || '').length > 160) {
+    if (compact) box.classList.add('compact');
+    else box.appendChild(txt);
+    if (!compact && ((r.text || '').split('\n').length > 3 || (r.text || '').length > 160)) {
       const m = el('button', 'more', 'Hele tekst');
       m.addEventListener('click', () => { const o = txt.classList.toggle('open'); m.textContent = o ? 'Minder' : 'Hele tekst'; });
       box.appendChild(m);
@@ -947,7 +950,7 @@ nav.navbar {
         nb.disabled = true;
         if (await postEdit(r, { cancel: true })) { r.status = 'cancelled'; r.edited = true; renderPlanning(); } else nb.disabled = false;
       });
-      if (extraBtn) acts.append(extraBtn, eb, nb); else acts.append(eb, nb);
+      if (compact) acts.append(nb); else if (extraBtn) acts.append(extraBtn, eb, nb); else acts.append(eb, nb);
     } else if (r.status === 'cancelled') {
       const tb = el('button', 'tbtn', 'Toch posten');
       tb.addEventListener('click', async () => {
