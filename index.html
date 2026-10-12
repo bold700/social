@@ -118,14 +118,16 @@ main { padding: 4px 16px calc(168px + env(safe-area-inset-bottom, 0px)); max-wid
 .dot { width: 10px; height: 10px; border-radius: 50%; flex: none; display: inline-block; }
 .acc-name { font-weight: 500; font-size: 16px; }
 .acc-role { margin-left: auto; font-size: 12px; color: var(--on-variant); }
-.big { font-family: var(--font-display); font-size: 40px; line-height: 48px; font-weight: 400; font-variant-numeric: tabular-nums; }
-.big-row { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.big { font-family: var(--font-display); font-size: 32px; line-height: 38px; font-weight: 400; font-variant-numeric: tabular-nums; }
+.big-row { display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; }
+.big-l { font-size: 14px; color: var(--on-variant); margin-right: 4px; }
+.accounts > .card { gap: 10px; padding: 14px 16px; }
 .delta { font-size: 14px; font-weight: 500; color: var(--ok); }
 .delta.zero { color: var(--on-variant); }
-.stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; border-top: 1px solid var(--outline-variant); padding-top: 12px; }
-.stat-v { font-size: 18px; line-height: 24px; font-weight: 500; font-variant-numeric: tabular-nums; display: block; }
+.stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; border-top: 1px solid var(--outline-variant); padding-top: 8px; }
+.stat-v { font-size: 16px; line-height: 22px; font-weight: 500; font-variant-numeric: tabular-nums; display: block; }
 .stat-l { font-size: 12px; line-height: 16px; color: var(--on-variant); }
-.spark { height: 44px; }
+.spark { height: 36px; }
 .spark svg, .chart svg { display: block; width: 100%; height: 100%; overflow: visible; }
 
 /* Segmented button (M3) */
@@ -393,6 +395,7 @@ nav.navbar {
   <section class="page" id="p-resultaten" data-title="Resultaten">
     <p class="updated" id="updated">&nbsp;</p>
     <p class="lead" id="lead"><span class="skeleton">Laatste 28 dagen op drie accounts</span></p>
+    <p class="error" id="render-err" hidden></p>
 
 
     <div class="accounts" id="accounts"></div>
@@ -621,24 +624,29 @@ nav.navbar {
       const head = el('div', 'acc-head');
       const d = el('span', 'dot'); d.style.background = accColor(a.id);
       head.append(d, el('span', 'acc-name', a.id), el('span', 'acc-role', a.role));
-      const lbl = el('div', 'note', 'Volgers');
       const row = el('div', 'big-row');
       const nf = Number(r.new_followers_28d) || 0;
-      row.append(el('span', 'big', fmt(r.followers)), el('span', 'delta' + (nf > 0 ? '' : ' zero'), (nf > 0 ? '+' : '') + fmt(nf) + ' in 28 dagen'));
+      row.append(el('span', 'big', fmt(r.followers)), el('span', 'big-l', 'volgers'), el('span', 'delta' + (nf > 0 ? '' : ' zero'), (nf > 0 ? '+' : '') + fmt(nf) + ' in 28 d'));
       const sp = el('div', 'spark'); sp.dataset.account = a.id;
       const st = el('div', 'stats');
       [['reach_per_day', 'Bereik per dag'], ['views_28d', 'Weergaven'], ['profile_views_28d', 'Profielbezoek']].forEach(([f, l]) => {
         const s = el('div'); s.append(el('span', 'stat-v', fmt(r[f])), el('span', 'stat-l', l)); st.appendChild(s);
       });
-      const top = el('div'); top.append(lbl, row);
+      const top = el('div'); top.append(row);
       c.append(head, top, sp, st);
       return c;
     }));
-    wrap.querySelectorAll('.spark').forEach((s) => spark(s, s.dataset.account));
+    wrap.querySelectorAll('.spark').forEach((s) => { try { spark(s, s.dataset.account); } catch (e) { showErr('grafiek', e); } });
 
     $('#legend-views').replaceChildren(...ACCOUNTS.map((a) => { const s = el('span'); const d = el('span', 'dot'); d.style.background = accColor(a.id); s.append(d, document.createTextNode(a.id)); return s; }));
-    if (current === 'resultaten') drawViews();
+    if (current === 'resultaten') { try { drawViews(); } catch (e) { showErr('weergaven', e); } }
   }
+  // Show drawing errors on screen (iPhone has no console), so a screenshot tells what broke.
+  function showErr(where, e) {
+    const n = $('#render-err'); if (!n) return;
+    n.hidden = false; n.textContent = 'Kon ' + where + ' niet tekenen: ' + (e && e.message ? e.message : e);
+  }
+  window.addEventListener('error', (ev) => showErr('pagina', ev.error || ev.message));
 
   const svgNS = 'http://www.w3.org/2000/svg';
   const sv = (tag, attrs) => { const e = document.createElementNS(svgNS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); return e; };
