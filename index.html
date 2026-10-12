@@ -227,6 +227,7 @@ a.item-text { color: var(--on-surface); }
 .cancelled-box { grid-column: 1 / -1; margin-top: 8px; }
 .cancelled-box summary { cursor: pointer; color: var(--on-variant); font-size: 14px; padding: 8px 0; }
 .cancelled-box > .card { margin-top: 8px; }
+.bubble .att { display: block; font-size: 12px; opacity: .85; margin-top: 6px; }
 .media-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; justify-content: space-between; }
 .need .pick-thumb { width: 96px; height: 120px; object-fit: cover; border-radius: 12px; }
 .plan-sum .li-hint { font-size: 12px; color: var(--on-variant); display: inline-flex; align-items: center; gap: 4px; }
@@ -1408,6 +1409,16 @@ nav.navbar {
     if (last && last > seen) f.appendChild(el('span', 'dotnew'));
   }
   $('#fab').addEventListener('click', openChat);
+  // The hourly task reads messages at :07 between 08:00 and 22:59 (Amsterdam time).
+  function nextRead(t) {
+    const now = new Date(Math.max(Date.now(), new Date(t).getTime()));
+    const ams = new Date(now.toLocaleString('en-US', { timeZone: 'Europe/Amsterdam' }));
+    let h = ams.getHours(); const min = ams.getMinutes();
+    if (min >= 7) h += 1;
+    if (h > 22) return 'morgen om 08:07';
+    if (h < 8) return 'om 08:07';
+    return 'om ' + String(h).padStart(2, '0') + ':07';
+  }
   function openChat() {
     const msgs = ((data.pipeline && data.pipeline.messages) || []).slice();
     const last = msgs.filter((m) => m.reply).map((m) => m.replied_at).sort().pop();
@@ -1416,7 +1427,7 @@ nav.navbar {
     const scrim = el('div', 'scrim');
     const sheet = el('div', 'sheet chat'); sheet.setAttribute('role', 'dialog'); sheet.setAttribute('aria-modal', 'true'); sheet.setAttribute('aria-label', 'Bericht aan Claude');
     const head = el('div', 'sheet-head');
-    const ht = el('h2', null, 'Bericht aan Claude'); ht.appendChild(el('p', null, 'Elk uur tussen 8 en 22 uur gelezen. Het antwoord verschijnt hier.'));
+    const ht = el('h2', null, 'Bericht aan Claude'); ht.appendChild(el('p', null, 'Je kunt de app gewoon sluiten. Ik lees elk uur (8 tot 23 uur) en zet mijn antwoord hier.'));
     const close = el('button', 'icon-btn'); close.setAttribute('aria-label', 'Sluiten');
     close.innerHTML = '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>';
     head.append(ht, close);
@@ -1427,7 +1438,10 @@ nav.navbar {
       const out = [];
       if (!msgs.length) out.push(el('p', 'note', 'Bijvoorbeeld: “Maak van de foto die ik net upload een post voor kennykennethh” of “Zet de post van vrijdag een week later”.'));
       msgs.forEach((m) => {
-        const me = el('div', 'bubble me', m.text); me.appendChild(el('span', 'meta', fmtT(m.created_at) + (m.status === 'new' ? ' · wacht op antwoord' : '')));
+        const att = String(m.text || '').match(/\[bijlage: ([^\]]+)\]/);
+        const me = el('div', 'bubble me', String(m.text || '').replace(/\s*\[bijlage: [^\]]+\]/, '').trim());
+        if (att) me.appendChild(el('span', 'att', 'Bijlage: ' + att[1].split('/').pop().replace(/^[0-9a-f]{8}-/, '')));
+        me.appendChild(el('span', 'meta', fmtT(m.created_at) + (m.status === 'new' ? ' · ✓ ontvangen · ik lees het ' + nextRead(m.created_at) : ' · ✓ gelezen')));
         out.push(me);
         if (m.reply) { const cl = el('div', 'bubble cl', m.reply); cl.appendChild(el('span', 'meta', 'Claude · ' + fmtT(m.replied_at))); out.push(cl); }
       });
@@ -1466,7 +1480,7 @@ nav.navbar {
         const m = { ...j.message, text: j.message.text, status: 'new' };
         msgs.push(m);
         if (data.pipeline) { data.pipeline.messages = (data.pipeline.messages || []).concat([m]); store.set('b7data', JSON.stringify(data)); }
-        ta.value = ''; ta.style.height = ''; upPath = null; status.textContent = 'Verstuurd. Je krijgt binnen een uur antwoord.';
+        ta.value = ''; ta.style.height = ''; upPath = null; status.textContent = 'Ontvangen. Je kunt de app sluiten; ik lees het ' + nextRead(new Date().toISOString()) + '.';
         draw();
       } catch (e) { status.textContent = 'Versturen lukte niet. Probeer het opnieuw.'; }
       send.disabled = false;
