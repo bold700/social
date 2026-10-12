@@ -300,11 +300,11 @@ a.item-text { color: var(--on-surface); }
 /* Navigation bar (M3) */
 nav.navbar {
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 10; background: var(--surface-cont);
-  display: grid; grid-template-columns: repeat(5, 1fr);
+  display: grid; grid-template-columns: repeat(4, 1fr);
   padding: 12px 0 calc(env(safe-area-inset-bottom, 0px) + 12px);
 }
 .nav-item { border: 0; background: none; display: grid; justify-items: center; gap: 4px; cursor: pointer; padding: 0; font-size: 12px; font-weight: 500; letter-spacing: 0.5px; color: var(--on-variant); }
-.nav-ind { width: 56px; height: 32px; border-radius: 16px; display: grid; place-items: center; transition: background .2s; }
+.nav-ind { width: 64px; height: 32px; border-radius: 16px; display: grid; place-items: center; transition: background .2s; }
 .nav-ind svg { width: 24px; height: 24px; }
 .nav-item[aria-current="page"] { color: var(--on-surface); }
 .nav-item[aria-current="page"] .nav-ind { background: var(--primary-cont); color: var(--primary); }
@@ -373,6 +373,11 @@ nav.navbar {
       <div class="chart" id="chart-views"></div>
     </article>
 
+    <article class="card">
+      <div><h2 class="title">Wat werkt per formaat</h2><p class="note">Afgelopen jaar, alle accounts</p></div>
+      <div class="formats" id="formats"></div>
+    </article>
+
     <article class="card high" id="analyse">
       <span class="badge">Analyse</span>
       <span class="note" id="an-period"></span>
@@ -381,48 +386,47 @@ nav.navbar {
     </article>
   </section>
 
-  <!-- PLANNING -->
-  <section class="page" id="p-planning" data-title="Planning" hidden>
-    <article class="card high">
-      <div><h2 class="title" id="plan-title">Gepland</h2><p class="note" id="plan-note">Alles wat klaarstaat, op alle kanalen.</p></div>
-      <div class="plan-sum" id="plan-sum"></div>
-    </article>
-    <div class="chips" id="plan-chips" role="group" aria-label="Kanaal"></div>
-    <div id="plan-list" style="display: grid; gap: 16px"></div>
-    <div id="plan-pipe" style="display: grid; gap: 16px"></div>
-  </section>
-
-  <!-- POSTS -->
-  <section class="page" id="p-posts" data-title="Posts" hidden>
-    <article class="card">
-      <div><h2 class="title">Wat werkt per formaat</h2><p class="note">Afgelopen jaar, alle accounts</p></div>
-      <div class="formats" id="formats"></div>
-    </article>
-    <div class="chips" id="acc-chips" role="group" aria-label="Account"></div>
-    <div class="segmented" role="group" aria-label="Sorteren" id="sort">
-      <button data-sort="posted" aria-pressed="true">Nieuwste</button>
-      <button data-sort="reach" aria-pressed="false">Bereik</button>
-      <button data-sort="engagement_rate" aria-pressed="false">Engagement</button>
+  <!-- CONTENT: gepland, geplaatst, ideeën -->
+  <section class="page" id="p-content" data-title="Content" hidden>
+    <div class="segmented" role="group" aria-label="Weergave" id="cseg">
+      <button data-seg="gepland" aria-pressed="true">Gepland</button>
+      <button data-seg="geplaatst" aria-pressed="false">Geplaatst</button>
+      <button data-seg="ideeen" aria-pressed="false">Ideeën</button>
     </div>
-    <article class="card"><div class="list" id="posts"></div></article>
+    <div class="pane" id="seg-gepland" style="display: grid; gap: 16px">
+      <article class="card high">
+        <div><h2 class="title" id="plan-title">Gepland</h2><p class="note" id="plan-note">Alles wat klaarstaat, op alle kanalen.</p></div>
+        <div class="plan-sum" id="plan-sum"></div>
+      </article>
+      <div class="chips" id="plan-chips" role="group" aria-label="Kanaal"></div>
+      <div id="plan-list" style="display: grid; gap: 16px"></div>
+    </div>
+    <div class="pane" id="seg-geplaatst" style="display: grid; gap: 16px" hidden>
+      <div class="chips" id="acc-chips" role="group" aria-label="Kanaal"></div>
+      <div class="segmented" role="group" aria-label="Sorteren" id="sort">
+        <button data-sort="posted" aria-pressed="true">Nieuwste</button>
+        <button data-sort="reach" aria-pressed="false">Bereik</button>
+        <button data-sort="engagement_rate" aria-pressed="false">Engagement</button>
+      </div>
+      <article class="card"><div class="list" id="posts"></div></article>
+    </div>
+    <div class="pane" id="seg-ideeen" hidden>
+      <div id="plan-pipe" style="display: grid; gap: 16px"></div>
+    </div>
   </section>
 
-  <!-- AUTOPILOT -->
-  <section class="page" id="p-autopilot" data-title="Autopilot" hidden>
+  <!-- LEADS + draait alles -->
+  <section class="page" id="p-leads" data-title="Leads" hidden>
     <article class="card high" id="leads-card">
       <div><h2 class="title">Leads uit reacties</h2><p class="note">Reacties waarin iemand vraagt naar een prijs, een app, een website of training. Wordt elke 10 minuten gecontroleerd.</p></div>
       <div id="push-box"></div>
       <div class="list" id="leads"></div>
     </article>
+    <p class="group-h">Draait alles?</p>
     <div id="channels" style="display: grid; gap: 16px"></div>
     <article class="card outlined">
-      <h2 class="title">Draait alles?</h2>
       <div id="health"></div>
     </article>
-    <p class="group-h">Komt eraan</p>
-    <article class="card"><div class="list" id="upcoming"></div><button class="btn tonal" id="to-planning">Bekijk de planning met beelden</button></article>
-    <p class="group-h">Geplaatst</p>
-    <article class="card"><div class="list" id="done"></div></article>
   </section>
 
   <!-- AANLEVEREN -->
@@ -440,9 +444,8 @@ nav.navbar {
 <button class="fab" id="fab" hidden aria-label="Bericht aan Claude"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M20 2H4a2 2 0 0 0-2 2v18l4-4h14a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2zm0 14H5.17L4 17.17V4h16v12zM7 9h10v2H7zm0-3h10v2H7zm0 6h7v2H7z"/></svg><span>Bericht</span></button>
 <nav class="navbar" id="navbar" aria-label="Onderdelen">
   <button class="nav-item" data-page="resultaten" aria-current="page"><span class="nav-ind"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M5 9.2h3V19H5zM10.6 5h2.8v14h-2.8zm5.6 8H19v6h-2.8z"/></svg></span>Resultaten</button>
-  <button class="nav-item" data-page="planning"><span class="nav-ind"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M19 4h-1V2h-2v2H8V2H6v2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zm0 16H5V10h14v10zM9 14H7v-2h2v2zm4 0h-2v-2h2v2zm4 0h-2v-2h2v2zm-8 4H7v-2h2v2zm4 0h-2v-2h2v2zm4 0h-2v-2h2v2z"/></svg></span>Planning</button>
-  <button class="nav-item" data-page="posts"><span class="nav-ind"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M19 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2zm0 16H5V5h14v14zm-5.04-6.71-2.75 3.54-1.96-2.36L6.5 17h11l-3.54-4.71z"/></svg></span>Posts</button>
-  <button class="nav-item" data-page="autopilot"><span class="nav-ind"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 6v3l4-4-4-4v3a8 8 0 0 0-6.76 12.26L6.7 14.8A5.9 5.9 0 0 1 6 12c0-3.31 2.69-6 6-6zm6.76 1.74L17.3 9.2c.44.84.7 1.79.7 2.8 0 3.31-2.69 6-6 6v-3l-4 4 4 4v-3a8 8 0 0 0 6.76-12.26z"/></svg></span>Autopilot</button>
+  <button class="nav-item" data-page="content"><span class="nav-ind"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M19 4h-1V2h-2v2H8V2H6v2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zm0 16H5V10h14v10zM9 14H7v-2h2v2zm4 0h-2v-2h2v2zm4 0h-2v-2h2v2zm-8 4H7v-2h2v2zm4 0h-2v-2h2v2zm4 0h-2v-2h2v2z"/></svg></span>Content</button>
+  <button class="nav-item" data-page="leads"><span class="nav-ind"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 22a2 2 0 0 0 2-2h-4a2 2 0 0 0 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4a1.5 1.5 0 0 0-3 0v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2zm-2 1H8v-6c0-2.48 1.51-4.5 4-4.5s4 2.02 4 4.5v6z"/></svg></span>Leads</button>
   <button class="nav-item" data-page="aanleveren"><span class="nav-ind"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 15.2a3.2 3.2 0 1 0 0-6.4 3.2 3.2 0 0 0 0 6.4zM9 2 7.17 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-3.17L15 2H9zm3 15a5 5 0 1 1 0-10 5 5 0 0 1 0 10z"/></svg></span>Aanleveren</button>
 </nav>
 
@@ -532,7 +535,15 @@ nav.navbar {
   }
   document.querySelectorAll('.nav-item').forEach((b) => b.addEventListener('click', () => show(b.dataset.page)));
   $('#refresh').addEventListener('click', load);
-  $('#to-planning').addEventListener('click', () => show('planning'));
+  // Content: one place for planned, published and ideas.
+  let seg = store.get('b7seg') || 'gepland';
+  function showSeg(v) {
+    seg = v; store.set('b7seg', v);
+    document.querySelectorAll('#cseg button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.seg === v)));
+    ['gepland', 'geplaatst', 'ideeen'].forEach((k) => { $('#seg-' + k).hidden = k !== v; });
+  }
+  document.querySelectorAll('#cseg button').forEach((b) => b.addEventListener('click', () => showSeg(b.dataset.seg)));
+  showSeg(seg);
   window.addEventListener('scroll', () => $('#topbar').classList.toggle('scrolled', window.scrollY > 4), { passive: true });
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && key) load(); });
 
@@ -689,7 +700,7 @@ nav.navbar {
 
     const chips = $('#acc-chips');
     if (!chips.children.length) {
-      [{ id: '', label: 'Alle' }, ...ACCOUNTS.map((a) => ({ id: a.id, label: a.id }))].forEach((a) => {
+      [{ id: '', label: 'Alle' }, ...ACCOUNTS.map((a) => ({ id: a.id, label: a.id })), { id: 'linkedin', label: 'LinkedIn' }].forEach((a) => {
         const b = el('button', 'chip'); b.dataset.acc = a.id; b.setAttribute('aria-pressed', String(a.id === postState.acc));
         if (a.id) { const d = el('span', 'dot'); d.style.background = accColor(a.id); b.appendChild(d); }
         b.appendChild(document.createTextNode(a.label));
@@ -718,22 +729,30 @@ nav.navbar {
   }
 
   function drawPosts() {
-    let rows = (data.posts || []).slice();
+    // LinkedIn has no stats via the free API; show its published posts from the queue.
+    const li = (data.queue || []).filter((q) => q.channel === 'LinkedIn' && q.status === 'published')
+      .map((q) => ({ account: 'linkedin', li: true, id: q.id, format: q.type, posted: String(q.scheduled).slice(0, 10), caption: q.preview }));
+    let rows = (data.posts || []).concat(li);
     if (postState.acc) rows = rows.filter((r) => r.account === postState.acc);
+    $('#sort').hidden = postState.acc === 'linkedin';
     const k = postState.sort;
     rows.sort((a, b) => k === 'posted' ? String(b.posted).localeCompare(String(a.posted)) : (Number(b[k]) || -1) - (Number(a[k]) || -1));
     $('#posts').replaceChildren(...rows.map((r) => {
       const it = el('div', 'item');
       const top = el('div', 'item-top');
       const d = el('span', 'dot'); d.style.background = accColor(r.account); d.style.width = d.style.height = '8px';
-      top.append(d, el('span', null, r.account), el('span', null, '· ' + r.format + ' · ' + fDate(r.posted)));
+      if (r.li) d.style.background = 'var(--on-variant)';
+      top.append(d, el('span', null, r.li ? 'LinkedIn' : r.account), el('span', null, '· ' + r.format + ' · ' + fDate(r.posted)));
       if (r.via_autopilot) { const p = el('span', 'pill ok', 'autopilot'); p.style.marginLeft = 'auto'; top.appendChild(p); }
       const txt = r.permalink ? el('a', 'item-text', r.caption || '(geen tekst)') : el('span', 'item-text', r.caption || '(geen tekst)');
       if (r.permalink) { txt.href = r.permalink; txt.target = '_blank'; txt.rel = 'noopener'; }
       const mt = el('div', 'metrics');
-      [['reach', 'bereik'], ['views', 'weergaven'], ['likes', 'likes'], ['comments', 'reacties']].forEach(([f, l]) => { const s = el('span'); s.append(el('b', null, fmt(r[f])), document.createTextNode(' ' + l)); mt.appendChild(s); });
-      const e = el('span'); e.append(el('b', null, pct(r.engagement_rate)), document.createTextNode(' engagement')); mt.appendChild(e);
-      const media = ((data.post_media || {})[r.ig_media_id] || []).filter(Boolean);
+      if (r.li) mt.appendChild(el('span', null, 'Live · LinkedIn geeft geen cijfers terug'));
+      else {
+        [['reach', 'bereik'], ['views', 'weergaven'], ['likes', 'likes'], ['comments', 'reacties']].forEach(([f, l]) => { const s = el('span'); s.append(el('b', null, fmt(r[f])), document.createTextNode(' ' + l)); mt.appendChild(s); });
+        const e = el('span'); e.append(el('b', null, pct(r.engagement_rate)), document.createTextNode(' engagement')); mt.appendChild(e);
+      }
+      const media = ((r.li ? (data.media || {})[r.id] : (data.post_media || {})[r.ig_media_id]) || []).filter(Boolean);
       if (media.length) { it.classList.add('has-thumb'); it.append(thumbBtn(media, r.account + ' · ' + fDate(r.posted), 3)); }
       it.append(top, txt, mt);
       return it;
@@ -948,7 +967,7 @@ nav.navbar {
       c3.appendChild(mb);
     }
     blocks.push(c3);
-    wrap.replaceChildren(el('p', 'group-h', 'Komt nog, nog niet ingepland'), ...blocks);
+    wrap.replaceChildren(el('p', 'note', 'Nog niet ingepland. Hier kiest het systeem uit, of jij via Bericht.'), ...blocks);
   }
 
   // Autopilot
@@ -992,8 +1011,7 @@ nav.navbar {
     };
     const up = q.filter((r) => r.status === 'queued' || r.status === 'processing' || r.status === 'failed');
     const dn = q.filter((r) => r.status === 'published' || r.status === 'cancelled').reverse();
-    $('#upcoming').replaceChildren(...(up.length ? up.slice(0, 3).map(item) : [el('p', 'note', 'Niets gepland.')]));
-    $('#done').replaceChildren(...(dn.length ? dn.map(item) : [el('p', 'note', 'Nog niets geplaatst.')]));
+
   }
 
   // Leads + push notifications
