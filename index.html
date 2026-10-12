@@ -465,7 +465,7 @@ nav.navbar {
     const sum = (f) => kpi.reduce((s, r) => s + (Number(r[f]) || 0), 0);
     const since = kpi[0] && kpi[0].tracking_since;
     const gen = data.generated_at ? new Date(data.generated_at) : null;
-    $('#updated').textContent = (data.health && data.health.metrics_updated ? 'Cijfers van ' + fWhen(data.health.metrics_updated) : '') + (since ? ' · gemeten sinds ' + fDate(since) : '');
+    $('#updated').textContent = (data.health && data.health.metrics_updated ? 'Cijfers van ' + fWhen(data.health.metrics_updated) : '') ;
     const lead = $('#lead');
     lead.replaceChildren(
       document.createTextNode('Laatste 28 dagen: '), el('b', null, fmt(sum('new_followers_28d'))), document.createTextNode(' nieuwe volgers, '),
@@ -771,7 +771,6 @@ nav.navbar {
         b.append(s, el('span', 'note', l)); kv.appendChild(b);
       });
       card.append(el('h2', 'title', c.channel), kv);
-      if (c.channel === 'LinkedIn') card.appendChild(el('p', 'note', 'LinkedIn geeft via de gratis koppeling geen bereik of likes terug.'));
       return card;
     }));
     const h = data.health || {};
