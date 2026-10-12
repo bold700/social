@@ -222,6 +222,9 @@ a.item-text { color: var(--on-surface); }
 .copy-why { margin: 0; font-size: 14px; line-height: 20px; }
 .copy-yours { background: var(--surface-cont-high); border-radius: 12px; padding: 12px; }
 .copy-yours p { margin: 4px 0 0; white-space: pre-line; font-size: 14px; line-height: 20px; }
+.cancelled-box { grid-column: 1 / -1; margin-top: 8px; }
+.cancelled-box summary { cursor: pointer; color: var(--on-variant); font-size: 14px; padding: 8px 0; }
+.cancelled-box > .card { margin-top: 8px; }
 .media-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; justify-content: space-between; }
 .need .pick-thumb { width: 96px; height: 120px; object-fit: cover; border-radius: 12px; }
 .plan-sum .li-hint { font-size: 12px; color: var(--on-variant); display: inline-flex; align-items: center; gap: 4px; }
@@ -1028,9 +1031,12 @@ nav.navbar {
       b.addEventListener('click', () => { planFilter = c.id; store.set('b7plan', c.id); renderPlanning(); });
       return b;
     }));
-    const shown = posts.filter((p) => planFilter === 'all' || p.acct === planFilter);
+    const isCancelled = (p) => p.main.status === 'cancelled' && (!p.mirror || p.mirror.status === 'cancelled');
+    const inFilter = posts.filter((p) => planFilter === 'all' || p.acct === planFilter);
+    const shown = inFilter.filter((p) => !isCancelled(p));
+    const cancelled = inFilter.filter(isCancelled);
     const list = $('#plan-list');
-    if (!shown.length) { renderPipeline(); list.replaceChildren(el('p', 'note', planFilter === 'motokenn00' ? 'Voor motokenn00 staat nog niets klaar. Zet ritfoto\'s of clips in de motokenn00-map, dan plant het systeem ze in.' : 'Niets gepland voor dit account.')); return; }
+    if (!shown.length && !cancelled.length) { renderPipeline(); list.replaceChildren(el('p', 'note', planFilter === 'motokenn00' ? 'Voor motokenn00 staat nog niets klaar. Zet ritfoto\'s of clips in de motokenn00-map, dan plant het systeem ze in.' : 'Niets gepland voor dit account.')); return; }
     const out = []; let lastDay = '';
     const tomorrow = new Date(Date.parse(today + 'T12:00:00Z') + 86400000).toISOString().slice(0, 10);
     shown.forEach((p) => {
@@ -1044,6 +1050,12 @@ nav.navbar {
       }
       out.push(planCard(r, p.mirror));
     });
+    if (cancelled.length) {
+      const det = el('details', 'cancelled-box');
+      det.appendChild(el('summary', null, 'Niet posten (' + cancelled.length + ')'));
+      cancelled.forEach((p) => det.appendChild(planCard(p.main, p.mirror)));
+      out.push(det);
+    }
     list.replaceChildren(...out);
     renderPipeline();
   }
