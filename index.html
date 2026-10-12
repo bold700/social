@@ -327,6 +327,19 @@ input, textarea, select { font-size: max(16px, 1em); }
 .composer { display: grid; grid-template-columns: auto 1fr auto; gap: 8px; align-items: end; padding: 8px 16px 16px; border-top: 1px solid var(--outline-variant); }
 .composer textarea { min-height: 44px; max-height: 160px; resize: none; border-radius: 22px; border: 1px solid var(--outline); background: var(--surface); color: var(--on-surface); padding: 11px 16px; font: inherit; font-size: 16px; }
 .composer textarea:focus { outline: 2px solid var(--primary); border-color: transparent; }
+.idea-drop { display: grid; place-items: center; min-height: 180px; border: 1.5px dashed var(--outline); border-radius: 16px; color: var(--primary); font-weight: 500; cursor: pointer; overflow: hidden; text-align: center; padding: 12px; }
+.idea-drop img, .idea-drop video { max-width: 100%; max-height: 42vh; border-radius: 12px; display: block; }
+.idea-form { display: grid; gap: 12px; }
+.idea-form textarea { min-height: 96px; resize: vertical; border-radius: 12px; border: 1px solid var(--outline); background: var(--surface); color: var(--on-surface); padding: 12px 14px; font: inherit; font-size: 16px; }
+.idea-form textarea:focus { outline: 2px solid var(--primary); border-color: transparent; }
+.my-ideas { display: grid; gap: 12px; }
+.my-idea { display: grid; grid-template-columns: 72px 1fr; gap: 12px; align-items: start; padding-top: 12px; border-top: 1px solid var(--outline-variant); }
+.my-idea:first-child { border-top: 0; padding-top: 0; }
+.my-idea.notumb { grid-template-columns: 1fr; }
+.my-idea .tmb { width: 72px; height: 90px; border-radius: 10px; object-fit: cover; background: var(--surface-cont-high); display: block; }
+.my-idea .tx { font-size: 14px; line-height: 20px; white-space: pre-line; word-break: break-word; }
+.my-idea .k { display: block; font-size: 12px; color: var(--on-variant); margin-top: 4px; }
+.my-idea .rep { margin-top: 8px; padding: 8px 12px; border-radius: 12px; background: var(--surface-cont-high); font-size: 14px; line-height: 20px; white-space: pre-line; }
 .sheet.chat { grid-template-rows: auto minmax(0, 1fr) auto auto; height: 86vh; }
 @media (min-width: 840px) { .sheet.chat { height: 80vh; } }
 
@@ -475,7 +488,7 @@ nav.navbar {
   </section>
 </main>
 
-<button class="fab" id="fab" hidden aria-label="Bericht aan Claude"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M20 2H4a2 2 0 0 0-2 2v18l4-4h14a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2zm0 14H5.17L4 17.17V4h16v12zM7 9h10v2H7zm0-3h10v2H7zm0 6h7v2H7z"/></svg><span>Bericht</span></button>
+<button class="fab" id="fab" hidden aria-label="Nieuw idee"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M9 21c0 .55.45 1 1 1h4c.55 0 1-.45 1-1v-1H9v1zm3-19C8.14 2 5 5.14 5 9c0 2.38 1.19 4.47 3 5.74V17c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-2.26c1.81-1.27 3-3.36 3-5.74 0-3.86-3.14-7-7-7zm2.85 11.1-.85.6V16h-4v-2.3l-.85-.6A4.997 4.997 0 0 1 7 9c0-2.76 2.24-5 5-5s5 2.24 5 5c0 1.63-.8 3.16-2.15 4.1z"/></svg><span>Idee</span></button>
 <nav class="navbar" id="navbar" aria-label="Onderdelen">
   <button class="nav-item" data-page="resultaten" aria-current="page"><span class="nav-ind"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M5 9.2h3V19H5zM10.6 5h2.8v14h-2.8zm5.6 8H19v6h-2.8z"/></svg></span>Resultaten</button>
   <button class="nav-item" data-page="content"><span class="nav-ind"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M19 4h-1V2h-2v2H8V2H6v2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zm0 16H5V10h14v10zM9 14H7v-2h2v2zm4 0h-2v-2h2v2zm4 0h-2v-2h2v2zm-8 4H7v-2h2v2zm4 0h-2v-2h2v2zm4 0h-2v-2h2v2z"/></svg></span>Content</button>
@@ -582,6 +595,10 @@ nav.navbar {
     seg = v; store.set('b7seg', v);
     document.querySelectorAll('#cseg button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.seg === v)));
     ['gepland', 'geplaatst', 'ideeen'].forEach((k) => { $('#seg-' + k).hidden = k !== v; });
+    if (v === 'ideeen' && data && data.pipeline) {
+      const last = (data.pipeline.messages || []).filter((m) => m.reply).map((m) => m.replied_at).sort().pop();
+      if (last) { store.set('b7seen', last); renderFab(); }
+    }
   }
   document.querySelectorAll('#cseg button').forEach((b) => b.addEventListener('click', () => showSeg(b.dataset.seg)));
   showSeg(seg);
@@ -1117,7 +1134,7 @@ nav.navbar {
   function renderPipeline() {
     const pl = data.pipeline || {};
     const wrap = $('#plan-pipe');
-    const blocks = [];
+    const blocks = [myIdeasCard()];
     const sp = pl.special;
     if (false && sp && sp.idea) {
       const c = el('article', 'card'); c.append(el('h2', 'title', 'Speciaal gepland'));
@@ -1157,7 +1174,7 @@ nav.navbar {
       c3.appendChild(mb);
     }
     blocks.push(c3);
-    wrap.replaceChildren(el('p', 'note', 'Nog niet ingepland. Hier kiest het systeem uit, of jij via Bericht.'), ...blocks);
+    wrap.replaceChildren(el('p', 'note', 'Nog niet ingepland. Hier kiest het systeem uit. Eigen idee? Tik op Idee.'), ...blocks);
   }
 
   // Autopilot
@@ -1399,7 +1416,7 @@ nav.navbar {
     }
   }
 
-  // ---------- Chat: messages to Claude, answered by an hourly task ----------
+  // ---------- Ideas: Kenny dumps inspiration (image + his words); the hourly task picks it up ----------
   function renderFab() {
     const f = $('#fab'); f.hidden = false;
     const msgs = (data.pipeline && data.pipeline.messages) || [];
@@ -1408,8 +1425,8 @@ nav.navbar {
     f.querySelector('.dotnew') && f.querySelector('.dotnew').remove();
     if (last && last > seen) f.appendChild(el('span', 'dotnew'));
   }
-  $('#fab').addEventListener('click', openChat);
-  // The hourly task reads messages at :07 between 08:00 and 22:59 (Amsterdam time).
+  $('#fab').addEventListener('click', openIdea);
+  // The hourly task reads ideas at :07 between 08:00 and 22:59 (Amsterdam time).
   function nextRead(t) {
     const now = new Date(Math.max(Date.now(), new Date(t).getTime()));
     const ams = new Date(now.toLocaleString('en-US', { timeZone: 'Europe/Amsterdam' }));
@@ -1419,80 +1436,88 @@ nav.navbar {
     if (h < 8) return 'om 08:07';
     return 'om ' + String(h).padStart(2, '0') + ':07';
   }
-  function openChat() {
-    const msgs = ((data.pipeline && data.pipeline.messages) || []).slice();
-    const last = msgs.filter((m) => m.reply).map((m) => m.replied_at).sort().pop();
-    if (last) store.set('b7seen', last);
-    renderFab();
+  const isVid = (p) => /\.(mp4|mov|m4v|webm)$/i.test(String(p || ''));
+  function myIdeasCard() {
+    const msgs = ((data.pipeline && data.pipeline.messages) || []).slice().reverse();
+    const c = el('article', 'card');
+    c.append(el('h2', 'title', 'Jouw ideeën (' + msgs.length + ')'));
+    if (!msgs.length) { c.appendChild(el('p', 'note', 'Zie je iets goeds? Tik op Idee, zet er een beeld of link bij en een zin wat je ermee wilt. Ik pak het op.')); return c; }
+    const list = el('div', 'my-ideas');
+    msgs.forEach((m) => {
+      const it = el('div', 'my-idea');
+      if (m.media_url) {
+        const t = isVid(m.upload_path) ? el('video', 'tmb') : el('img', 'tmb');
+        if (t.tagName === 'VIDEO') { t.muted = true; t.playsInline = true; t.preload = 'metadata'; t.src = m.media_url + '#t=0.5'; }
+        else { t.src = m.media_url; t.alt = ''; t.loading = 'lazy'; }
+        it.appendChild(t);
+      } else it.classList.add('notumb');
+      const box = el('div');
+      const txt = String(m.text || '').replace(/\s*\[bijlage: [^\]]+\]/, '').trim();
+      const url = (txt.match(/https?:\/\/\S+/) || [])[0];
+      box.appendChild(el('div', 'tx', url ? txt.replace(url, '').replace(/\s+—\s*$/, '').trim() || 'Link' : (txt || 'Beeld zonder tekst')));
+      if (url) { const a = el('a', 'link-btn', 'Bekijk het origineel'); a.href = url; a.target = '_blank'; a.rel = 'noopener'; box.appendChild(a); }
+      const d = new Date(m.created_at);
+      box.appendChild(el('span', 'k', d.getDate() + ' ' + MONTHS[d.getMonth()] + (m.status === 'new' ? ' · ✓ ontvangen · ik pak het op ' + nextRead(m.created_at) : m.reply ? '' : ' · ✓ opgepakt')));
+      if (m.reply) box.appendChild(el('div', 'rep', m.reply));
+      it.appendChild(box); list.appendChild(it);
+    });
+    c.appendChild(list);
+    return c;
+  }
+  function openIdea() {
     const scrim = el('div', 'scrim');
-    const sheet = el('div', 'sheet chat'); sheet.setAttribute('role', 'dialog'); sheet.setAttribute('aria-modal', 'true'); sheet.setAttribute('aria-label', 'Bericht aan Claude');
+    const sheet = el('div', 'sheet'); sheet.setAttribute('role', 'dialog'); sheet.setAttribute('aria-modal', 'true'); sheet.setAttribute('aria-label', 'Nieuw idee');
     const head = el('div', 'sheet-head');
-    const ht = el('h2', null, 'Bericht aan Claude'); ht.appendChild(el('p', null, 'Je kunt de app gewoon sluiten. Ik lees elk uur (8 tot 23 uur) en zet mijn antwoord hier.'));
+    const ht = el('h2', null, 'Nieuw idee'); ht.appendChild(el('p', null, 'Beeld of link plus een zin. Ik bewaar het bij Jouw ideeën en pak het later op.'));
     const close = el('button', 'icon-btn'); close.setAttribute('aria-label', 'Sluiten');
     close.innerHTML = '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>';
     head.append(ht, close);
     const body = el('div', 'sheet-body');
-    const thread = el('div', 'thread');
-    const fmtT = (t) => { const d = new Date(t); return DAYS[d.getDay()] + ' ' + d.getDate() + ' ' + MONTHS[d.getMonth()] + ' · ' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); };
-    const draw = () => {
-      const out = [];
-      if (!msgs.length) out.push(el('p', 'note', 'Bijvoorbeeld: “Maak van de foto die ik net upload een post voor kennykennethh” of “Zet de post van vrijdag een week later”.'));
-      msgs.forEach((m) => {
-        const att = String(m.text || '').match(/\[bijlage: ([^\]]+)\]/);
-        const me = el('div', 'bubble me', String(m.text || '').replace(/\s*\[bijlage: [^\]]+\]/, '').trim());
-        if (att) me.appendChild(el('span', 'att', 'Bijlage: ' + att[1].split('/').pop().replace(/^[0-9a-f]{8}-/, '')));
-        me.appendChild(el('span', 'meta', fmtT(m.created_at) + (m.status === 'new' ? ' · ✓ ontvangen · ik lees het ' + nextRead(m.created_at) : ' · ✓ gelezen')));
-        out.push(me);
-        if (m.reply) { const cl = el('div', 'bubble cl', m.reply); cl.appendChild(el('span', 'meta', 'Claude · ' + fmtT(m.replied_at))); out.push(cl); }
-      });
-      thread.replaceChildren(...out);
-      requestAnimationFrame(() => { body.scrollTop = body.scrollHeight; });
-    };
-    draw();
-    body.appendChild(thread);
-    const status = el('p', 'note'); status.style.padding = '0 16px';
-    const comp = el('div', 'composer');
-    const att = el('label', 'icon-btn'); att.setAttribute('aria-label', 'Foto of video toevoegen');
-    att.innerHTML = '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M16.5 6v11.5a4 4 0 0 1-8 0V5a2.5 2.5 0 0 1 5 0v10.5a1 1 0 0 1-2 0V6H10v9.5a2.5 2.5 0 0 0 5 0V5a4 4 0 0 0-8 0v12.5a5.5 5.5 0 0 0 11 0V6h-1.5z"/></svg>';
-    const fin = el('input'); fin.type = 'file'; fin.accept = 'image/*,video/*'; fin.hidden = true; att.appendChild(fin);
-    const ta = el('textarea'); ta.rows = 1; ta.placeholder = 'Typ je bericht'; ta.setAttribute('aria-label', 'Bericht');
-    ta.addEventListener('input', () => { ta.style.height = 'auto'; ta.style.height = Math.min(160, ta.scrollHeight) + 'px'; });
-    const send = el('button', 'icon-btn'); send.setAttribute('aria-label', 'Versturen'); send.style.color = 'var(--primary)';
-    send.innerHTML = '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M2.01 21 23 12 2.01 3 2 10l15 2-15 2z"/></svg>';
-    comp.append(att, ta, send);
-    let upPath = null;
-    fin.addEventListener('change', async () => {
+    const form = el('div', 'idea-form');
+    const drop = el('label', 'idea-drop');
+    const fin = el('input'); fin.type = 'file'; fin.accept = 'image/*,video/*'; fin.hidden = true;
+    const dropTxt = el('span', null, '+ Beeld of video kiezen');
+    drop.append(dropTxt, fin);
+    const ta = el('textarea'); ta.placeholder = 'Wat is het en wat wil je ermee? Plak hier ook een link.'; ta.setAttribute('aria-label', 'Jouw tekst');
+    const status = el('p', 'note');
+    const save = el('button', 'btn', 'Opslaan');
+    form.append(drop, ta, status, save);
+    body.appendChild(form);
+    let upPath = null, uploading = null;
+    fin.addEventListener('change', () => {
       const f = fin.files && fin.files[0]; if (!f) return;
-      status.textContent = 'Uploaden… ' + f.name;
-      try { const r = await uploadFile(f, null); upPath = r.path; photoCache = null; status.textContent = 'Bijlage: ' + f.name; }
-      catch (e) { status.textContent = 'Uploaden lukte niet.'; }
+      const prev = f.type.startsWith('video/') ? el('video') : el('img');
+      prev.src = URL.createObjectURL(f); if (prev.tagName === 'VIDEO') { prev.muted = true; prev.playsInline = true; prev.controls = true; } else prev.alt = '';
+      drop.replaceChildren(prev, fin);
+      upPath = null; status.textContent = 'Uploaden…';
+      uploading = uploadFile(f, null).then((r) => { upPath = r.path; photoCache = null; status.textContent = 'Beeld staat klaar.'; })
+        .catch(() => { status.textContent = 'Uploaden lukte niet. Kies het beeld opnieuw.'; });
     });
-    send.addEventListener('click', async () => {
-      const text = ta.value.trim(); if (!text) return;
-      send.disabled = true;
+    save.addEventListener('click', async () => {
+      save.disabled = true;
+      if (uploading) { status.textContent = 'Even wachten, beeld wordt geüpload…'; await uploading; }
+      const text = ta.value.trim();
+      if (!text && !upPath) { status.textContent = 'Voeg een beeld of tekst toe.'; save.disabled = false; return; }
       try {
         const res = await fetch(API.replace('action=app', 'action=app_message'), {
           method: 'POST', headers: { 'x-app-key': key, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ text: upPath ? text + '\n[bijlage: ' + upPath + ']' : text, upload_path: upPath }),
+          body: JSON.stringify({ text, upload_path: upPath }),
         });
         const j = await res.json();
         if (!res.ok) throw new Error(j.error || 'HTTP ' + res.status);
-        const m = { ...j.message, text: j.message.text, status: 'new' };
-        msgs.push(m);
+        const m = { ...j.message, status: 'new' };
         if (data.pipeline) { data.pipeline.messages = (data.pipeline.messages || []).concat([m]); store.set('b7data', JSON.stringify(data)); }
-        ta.value = ''; ta.style.height = ''; upPath = null; status.textContent = 'Ontvangen. Je kunt de app sluiten; ik lees het ' + nextRead(new Date().toISOString()) + '.';
-        draw();
-      } catch (e) { status.textContent = 'Versturen lukte niet. Probeer het opnieuw.'; }
-      send.disabled = false;
+        shut();
+        show('content'); showSeg('ideeen'); renderPipeline(); window.scrollTo(0, 0);
+      } catch (e) { status.textContent = 'Opslaan lukte niet. Probeer het opnieuw.'; save.disabled = false; }
     });
-    sheet.append(head, body, status, comp);
+    sheet.append(head, body);
     scrim.appendChild(sheet); document.body.appendChild(scrim); document.body.style.overflow = 'hidden';
     const shut = () => { scrim.remove(); document.body.style.overflow = ''; document.removeEventListener('keydown', esc); };
     const esc = (e) => { if (e.key === 'Escape') shut(); };
     document.addEventListener('keydown', esc);
     close.addEventListener('click', shut);
     scrim.addEventListener('click', (e) => { if (e.target === scrim) shut(); });
-    setTimeout(() => ta.focus(), 50);
   }
 
   // Upload straight from this device into the private inbox (app/), optionally linked to a checklist item.
