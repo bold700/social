@@ -911,7 +911,7 @@ nav.navbar {
       b.addEventListener('click', () => { planFilter = c.id; store.set('b7plan', c.id); renderPlanning(); });
       return b;
     }));
-    const rows = all.filter((r) => (planFilter === 'all' || chKey(r) === planFilter) && (String(r.scheduled).slice(0, 10) >= today || r.status !== 'published'));
+    const rows = all.filter((r) => (planFilter === 'all' || chKey(r) === planFilter) && r.status !== 'published');
     const list = $('#plan-list');
     if (!rows.length) { renderPipeline(); list.replaceChildren(el('p', 'note', planFilter === 'motokenn00' ? 'Voor motokenn00 staat nog niets klaar. Zet ritfoto\'s of clips in de motokenn00-map, dan plant het systeem ze in.' : 'Niets gepland voor dit kanaal.')); return; }
     const out = []; let lastDay = '';
