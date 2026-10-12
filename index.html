@@ -730,7 +730,7 @@ nav.navbar {
 
     const chips = $('#acc-chips');
     if (!chips.children.length) {
-      [{ id: '', label: 'Alle' }, ...ACCOUNTS.map((a) => ({ id: a.id, label: a.id })), { id: 'linkedin', label: 'LinkedIn' }].forEach((a) => {
+      [{ id: '', label: 'Alle' }, ...ACCOUNTS.map((a) => ({ id: a.id, label: a.id }))].forEach((a) => {
         const b = el('button', 'chip'); b.dataset.acc = a.id; b.setAttribute('aria-pressed', String(a.id === postState.acc));
         if (a.id) { const d = el('span', 'dot'); d.style.background = accColor(a.id); b.appendChild(d); }
         b.appendChild(document.createTextNode(a.label));
@@ -764,7 +764,8 @@ nav.navbar {
       .map((q) => ({ account: 'linkedin', li: true, id: q.id, format: q.type, posted: String(q.scheduled).slice(0, 10), caption: q.preview }));
     let rows = (data.posts || []).concat(li);
     if (postState.acc) rows = rows.filter((r) => r.account === postState.acc);
-    $('#sort').hidden = postState.acc === 'linkedin';
+    if (postState.acc === 'linkedin') postState.acc = '';
+    $('#sort').hidden = false;
     const k = postState.sort;
     rows.sort((a, b) => k === 'posted' ? String(b.posted).localeCompare(String(a.posted)) : (Number(b[k]) || -1) - (Number(a[k]) || -1));
     $('#posts').replaceChildren(...rows.map((r) => {
@@ -772,7 +773,8 @@ nav.navbar {
       const top = el('div', 'item-top');
       const d = el('span', 'dot'); d.style.background = accColor(r.account); d.style.width = d.style.height = '8px';
       if (r.li) d.style.background = 'var(--on-variant)';
-      top.append(d, el('span', null, r.li ? 'LinkedIn' : r.account), el('span', null, '· ' + r.format + ' · ' + fDate(r.posted)));
+      if (r.li) top.append(chIcon('linkedin'), el('span', null, 'op LinkedIn · ' + r.format + ' · ' + fDate(r.posted)));
+      else top.append(d, el('span', null, r.account), el('span', null, '· ' + r.format + ' · ' + fDate(r.posted)));
       if (r.via_autopilot) { const p = el('span', 'pill ok', 'autopilot'); p.style.marginLeft = 'auto'; top.appendChild(p); }
       const txt = r.permalink ? el('a', 'item-text', r.caption || '(geen tekst)') : el('span', 'item-text', r.caption || '(geen tekst)');
       if (r.permalink) { txt.href = r.permalink; txt.target = '_blank'; txt.rel = 'noopener'; }
@@ -844,10 +846,10 @@ nav.navbar {
     const time = String(r.scheduled || '').slice(11, 16);
     head.append(el('b', null, time), chIcon(k));
     if (mirror) head.appendChild(chIcon('linkedin'));
-    head.appendChild(el('span', null, (k === 'linkedin' ? 'LinkedIn' : k) + (mirror ? ' + LinkedIn' : '') + ' · ' + r.type));
+    head.appendChild(el('span', null, acctOf(r) + ' · ' + r.type));
     if (!mirror) { const [t, cls] = STATUS[r.status] || [r.status, '']; const p = el('span', 'pill ' + cls, t); p.style.marginLeft = 'auto'; head.appendChild(p); }
     card.appendChild(head);
-    if (r.channel === 'linkedin') card.appendChild(el('p', 'note', 'Alleen op LinkedIn' + (r.src_account ? ' · hoort bij ' + r.src_account : '')));
+    if (r.channel === 'linkedin') card.appendChild(el('p', 'note', 'Alleen op LinkedIn'));
     const collab = (r.collab || []).filter(Boolean);
     if (collab.length) card.appendChild(el('p', 'note', 'Samen met ' + collab.join(', ') + ' (collab)'));
     const waitR = r.status === 'waiting' ? r : mirror && mirror.status === 'waiting' ? mirror : null;
@@ -869,7 +871,7 @@ nav.navbar {
     const media = r.status === 'waiting' ? [] : (r.media || []).filter(Boolean);
     if (media.length) {
       const strip = el('div', 'strip');
-      const label = (k === 'linkedin' ? 'LinkedIn' : k) + ' · ' + fWhen(String(r.scheduled).replace('T', ' '));
+      const label = acctOf(r) + ' · ' + fWhen(String(r.scheduled).replace('T', ' '));
       media.forEach((u, i) => {
         const b = el('button'); b.setAttribute('aria-label', 'Beeld ' + (i + 1) + ' van ' + media.length);
         if (isVideo(u)) {
