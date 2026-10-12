@@ -66,6 +66,9 @@
 }
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 html, body { margin: 0; background: var(--surface); color: var(--on-surface); }
+/* Always reserve room for the scrollbar so the layout never jumps between pages. */
+html { scrollbar-gutter: stable; }
+@supports not (scrollbar-gutter: stable) { html { overflow-y: scroll; } }
 body { font-family: var(--font); font-size: 14px; line-height: 20px; letter-spacing: 0.25px; -webkit-font-smoothing: antialiased; overscroll-behavior-y: none; }
 [hidden] { display: none !important; }
 button { font: inherit; color: inherit; }
