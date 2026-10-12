@@ -246,7 +246,7 @@ a.item-text { color: var(--on-surface); }
 .pick-btn { flex: none; margin-top: 8px; height: 32px; padding: 0 12px; border-radius: 16px; border: 1px solid var(--outline-variant); background: transparent; color: var(--primary); font-size: 13px; font-weight: 500; cursor: pointer; white-space: nowrap; }
 .pick-btn:active { background: var(--primary-cont); }
 .scrim { position: fixed; inset: 0; z-index: 40; background: rgba(43, 42, 40, .55); display: flex; align-items: flex-end; justify-content: center; }
-.sheet { background: var(--surface-cont-low); color: var(--on-surface); width: 100%; max-width: 720px; max-height: 86vh; border-radius: 28px 28px 0 0; display: grid; grid-template-rows: auto minmax(0, 1fr); padding-bottom: env(safe-area-inset-bottom, 0px); }
+.sheet { background: var(--surface-cont); color: var(--on-surface); width: 100%; max-width: 720px; max-height: 86vh; border-radius: 28px 28px 0 0; display: grid; grid-template-rows: auto minmax(0, 1fr); padding-bottom: env(safe-area-inset-bottom, 0px); }
 @media (min-width: 840px) { .scrim { align-items: center; } .sheet { border-radius: 28px; max-height: 80vh; } }
 .sheet-head { display: flex; align-items: center; gap: 8px; padding: 16px 8px 8px 24px; }
 .sheet-head h2 { flex: 1; margin: 0; font-size: 18px; line-height: 24px; font-weight: 500; }
@@ -257,6 +257,12 @@ a.item-text { color: var(--on-surface); }
 .ptile .im { aspect-ratio: 4 / 5; border-radius: 10px; overflow: hidden; background: var(--surface-cont-high); }
 .ptile img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .ptile span { font-size: 11px; line-height: 14px; color: var(--on-variant); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.upload-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 4px 0 8px; }
+.upload-row .btn { gap: 8px; }
+.upload-row .btn svg { width: 18px; height: 18px; }
+.ptile .vid { position: absolute; }
+.ptile .im { position: relative; }
+.ptile .im video { width: 100%; height: 100%; object-fit: cover; display: block; }
 .ptile:focus-visible .im, .ptile:hover .im { outline: 3px solid var(--primary); outline-offset: 1px; }
 
 /* Navigation bar (M3) */
@@ -392,7 +398,7 @@ nav.navbar {
       <h2 class="title">Foto's die nog nodig zijn</h2>
       <div class="big-row"><span class="big" id="sup-done">–</span><span class="note" id="sup-total"></span></div>
       <div class="progress"><span id="sup-bar" style="width: 0"></span></div>
-      <p class="note">Kies zelf een foto uit Drive met ‘Kies foto’, of zet hem in Werk van vandaag. Het systeem herkent hem dan zelf en vinkt hem af.</p>
+      <p class="note">Kies of upload een foto met ‘Kies foto’. Of zet hem in Werk van vandaag, dan herkent het systeem hem zelf.</p>
     </article>
     <article class="card"><div id="supply"></div></article>
   </section>
@@ -998,7 +1004,29 @@ nav.navbar {
     close.innerHTML = '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>';
     head.append(ht, close);
     const body = el('div', 'sheet-body');
-    body.appendChild(el('p', 'note', 'Foto’s laden uit Drive…'));
+    const up = el('div', 'upload-row');
+    const ub = el('label', 'btn');
+    ub.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M5 20h14v-2H5v2zm7-16-5 5h3v6h4V9h3l-5-5z"/></svg><span>Uploaden</span>';
+    const input = el('input'); input.type = 'file'; input.accept = 'image/*,video/*'; input.hidden = true;
+    ub.appendChild(input);
+    const ust = el('span', 'note', 'Van je telefoon of laptop');
+    up.append(ub, ust);
+    input.addEventListener('change', async () => {
+      const f = input.files && input.files[0];
+      if (!f) return;
+      ust.textContent = 'Uploaden… ' + f.name;
+      try {
+        const res = await uploadFile(f, r.nr);
+        photoCache = null;
+        Object.assign(r, { klaar: 'ja', photo_id: 'storage:' + res.path, photo_name: f.name, photo_url: res.url, used_for: null, updated_by: 'app' });
+        shut(); renderSupply(); store.set('b7data', JSON.stringify(data));
+      } catch (e) {
+        ust.textContent = 'Uploaden lukte niet. Probeer het opnieuw.';
+      }
+    });
+    const list = el('div'); list.style.display = 'grid'; list.style.gap = '12px';
+    list.appendChild(el('p', 'note', 'Foto’s laden…'));
+    body.append(up, list);
     sheet.append(head, body); scrim.appendChild(sheet); document.body.appendChild(scrim); document.body.style.overflow = 'hidden';
     const shut = () => { scrim.remove(); document.body.style.overflow = ''; document.removeEventListener('keydown', esc); };
     const esc = (e) => { if (e.key === 'Escape') shut(); };
@@ -1020,17 +1048,32 @@ nav.navbar {
         const grid = el('div', 'pgrid');
         groups[g].forEach((p) => {
           const t = el('button', 'ptile'); t.type = 'button'; t.setAttribute('aria-label', 'Kies ' + p.name);
-          const im = el('div', 'im'); const img = el('img'); img.src = p.thumb; img.alt = ''; img.loading = 'lazy'; img.referrerPolicy = 'no-referrer'; im.appendChild(img);
+          const im = el('div', 'im');
+          if (p.video) { const v = el('video'); v.src = p.thumb + '#t=0.5'; v.muted = true; v.playsInline = true; v.preload = 'metadata'; im.appendChild(v); }
+          else { const img = el('img'); img.src = p.thumb; img.alt = ''; img.loading = 'lazy'; img.referrerPolicy = 'no-referrer'; im.appendChild(img); }
           t.append(im, el('span', null, (used.has(p.id) ? '✓ al gebruikt · ' : '') + p.name));
           t.addEventListener('click', () => { shut(); pickPhoto(r, p); });
           grid.appendChild(t);
         });
         out.push(grid);
       });
-      body.replaceChildren(...(out.length ? out : [el('p', 'note', 'Geen foto’s gevonden in Beeldbank of Werk van vandaag.')]));
+      list.replaceChildren(...(out.length ? out : [el('p', 'note', 'Nog geen foto’s. Upload er een hierboven.')]));
     } catch (e) {
-      body.replaceChildren(el('p', 'error', 'Foto’s laden lukte niet. Probeer het zo opnieuw.'));
+      list.replaceChildren(el('p', 'error', 'Foto’s laden lukte niet. Probeer het zo opnieuw.'));
     }
+  }
+
+  // Upload straight from this device into the private inbox (app/), optionally linked to a checklist item.
+  async function uploadFile(file, nr) {
+    const post = (action, body) => fetch(API.replace('action=app', 'action=' + action), {
+      method: 'POST', headers: { 'x-app-key': key, 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+    }).then((r) => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); });
+    const start = await post('app_upload', { name: file.name, type: file.type });
+    const fd = new FormData(); fd.append('cacheControl', '3600'); fd.append('', file);
+    const put = await fetch(start.signedUrl, { method: 'PUT', body: fd, headers: { 'x-upsert': 'false' } });
+    if (!put.ok) throw new Error('upload ' + put.status);
+    const done = await post('app_upload_done', { path: start.path, name: file.name, nr });
+    return { path: start.path, url: done.url };
   }
 
   async function pickPhoto(r, p) {
