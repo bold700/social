@@ -233,6 +233,12 @@ a.item-text { color: var(--on-surface); }
 .viewer img, .viewer video { max-width: 100%; max-height: 100%; border-radius: 8px; }
 .viewer .vfoot { padding: 8px 16px calc(env(safe-area-inset-bottom, 0px) + 16px); color: #c4b9ae; font-size: 12px; text-align: center; }
 
+.item.has-thumb { grid-template-columns: 48px minmax(0, 1fr); column-gap: 12px; }
+.item.has-thumb > :not(.qthumb) { grid-column: 2; }
+.qthumb { grid-column: 1; grid-row: 1 / span 2; width: 48px; aspect-ratio: 4 / 5; border-radius: 6px; overflow: hidden; border: 0; padding: 0; background: var(--surface-cont-high); position: relative; cursor: pointer; align-self: start; }
+.qthumb img, .qthumb video { width: 100%; height: 100%; object-fit: cover; display: block; pointer-events: none; }
+.qthumb .n { position: absolute; right: 3px; bottom: 3px; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 8px; background: rgba(43, 42, 40, .75); color: #efe5dc; font-size: 10px; line-height: 16px; text-align: center; }
+
 /* Navigation bar (M3) */
 nav.navbar {
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 10; background: var(--surface-cont);
@@ -811,6 +817,18 @@ nav.navbar {
       const p = el('span', 'pill ' + cls, t); p.style.marginLeft = 'auto'; top.appendChild(p);
       const txt = r.permalink ? el('a', 'item-text', r.preview) : el('span', 'item-text', r.preview);
       if (r.permalink) { txt.href = r.permalink; txt.target = '_blank'; txt.rel = 'noopener'; }
+      const media = ((data.media || {})[r.id] || []).filter(Boolean);
+      if (media.length) {
+        it.classList.add('has-thumb');
+        const tb = el('button', 'qthumb'); tb.setAttribute('aria-label', 'Bekijk ' + (media.length === 1 ? 'het beeld' : 'de ' + media.length + ' beelden'));
+        const u = media[0];
+        if (isVideo(u)) { const v = el('video'); v.src = u + '#t=0.5'; v.muted = true; v.playsInline = true; v.preload = 'metadata'; tb.appendChild(v); }
+        else { const im = el('img'); im.src = u; im.alt = ''; im.loading = 'lazy'; im.decoding = 'async'; tb.appendChild(im); }
+        if (media.length > 1) tb.appendChild(el('span', 'n', String(media.length)));
+        else if (isVideo(u)) tb.appendChild(el('span', 'n', '▶'));
+        tb.addEventListener('click', () => openViewer(media, 0, (r.channel === 'Instagram' ? r.account : 'LinkedIn') + ' · ' + fWhen(r.scheduled)));
+        it.append(tb);
+      }
       it.append(top, txt);
       return it;
     };
