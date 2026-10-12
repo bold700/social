@@ -275,6 +275,11 @@ nav.navbar {
 
   <!-- AUTOPILOT -->
   <section class="page" id="p-autopilot" data-title="Autopilot" hidden>
+    <article class="card high" id="leads-card">
+      <div><h2 class="title">Leads uit reacties</h2><p class="note">Reacties waarin iemand vraagt naar een prijs, een app, een website of training. Wordt elke 10 minuten gecontroleerd.</p></div>
+      <div id="push-box"></div>
+      <div class="list" id="leads"></div>
+    </article>
     <div id="channels" style="display: grid; gap: 16px"></div>
     <article class="card outlined">
       <h2 class="title">Draait alles?</h2>
@@ -400,6 +405,7 @@ nav.navbar {
     renderResults();
     renderPosts();
     renderAutopilot();
+    renderLeads();
     renderSupply();
   }
 
@@ -620,6 +626,77 @@ nav.navbar {
     const dn = q.filter((r) => r.status === 'published' || r.status === 'cancelled').reverse();
     $('#upcoming').replaceChildren(...(up.length ? up.map(item) : [el('p', 'note', 'Niets gepland.')]));
     $('#done').replaceChildren(...(dn.length ? dn.map(item) : [el('p', 'note', 'Nog niets geplaatst.')]));
+  }
+
+  // Leads + push notifications
+  function renderLeads() {
+    const leads = data.leads || [];
+    $('#leads').replaceChildren(...(leads.length ? leads.map((r) => {
+      const it = el('div', 'item');
+      const top = el('div', 'item-top');
+      const d = el('span', 'dot'); d.style.background = accColor(r.account); d.style.width = d.style.height = '8px';
+      top.append(d, el('span', null, '@' + (r.username || '?') + ' · ' + r.account + ' · ' + fDate(String(r.created_at || '').slice(0, 10))));
+      const txt = r.permalink ? el('a', 'item-text', r.text) : el('span', 'item-text', r.text);
+      if (r.permalink) { txt.href = r.permalink; txt.target = '_blank'; txt.rel = 'noopener'; }
+      it.append(top, txt);
+      return it;
+    }) : [el('p', 'note', 'Nog geen leads. Je krijgt een melding zodra er een binnenkomt.')]));
+    renderPushBox();
+  }
+
+  const pushSupported = () => 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+  const standalone = () => window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches;
+  let swReg = null;
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').then((r) => { swReg = r; renderPushBox(); }).catch(() => {});
+  }
+
+  async function renderPushBox() {
+    const box = $('#push-box');
+    if (!box) return;
+    if (!pushSupported() || !standalone()) {
+      box.replaceChildren(el('p', 'note', 'Meldingen werken alleen als je de app opent vanaf je beginscherm.'));
+      return;
+    }
+    let subscribed = false;
+    try { subscribed = !!(swReg && await swReg.pushManager.getSubscription()) && Notification.permission === 'granted'; } catch (e) { subscribed = false; }
+    if (subscribed) {
+      box.replaceChildren(el('span', 'pill ok', 'Meldingen staan aan'));
+      return;
+    }
+    if (Notification.permission === 'denied') {
+      box.replaceChildren(el('p', 'note', 'Meldingen zijn uitgezet. Zet ze aan via Instellingen › Meldingen › B7 Social.'));
+      return;
+    }
+    const b = el('button', 'btn', 'Zet meldingen aan');
+    b.addEventListener('click', enablePush);
+    box.replaceChildren(b);
+  }
+
+  function keyBytes(base64) {
+    const pad = '='.repeat((4 - (base64.length % 4)) % 4);
+    const raw = atob((base64 + pad).replace(/-/g, '+').replace(/_/g, '/'));
+    return Uint8Array.from([...raw].map((c) => c.charCodeAt(0)));
+  }
+
+  async function enablePush() {
+    const box = $('#push-box');
+    try {
+      const perm = await Notification.requestPermission();
+      if (perm !== 'granted') { renderPushBox(); return; }
+      const reg = swReg || await navigator.serviceWorker.ready;
+      const sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: keyBytes(data.vapid) });
+      const res = await fetch(API.replace('action=app', 'action=app_push'), {
+        method: 'POST',
+        headers: { 'x-app-key': key, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ subscription: sub.toJSON() }),
+      });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      renderPushBox();
+    } catch (e) {
+      box.replaceChildren(el('p', 'error', 'Aanzetten lukte niet. Probeer het opnieuw.'));
+      setTimeout(renderPushBox, 4000);
+    }
   }
 
   // Supply
