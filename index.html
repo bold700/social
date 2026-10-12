@@ -277,7 +277,8 @@ a.item-text { color: var(--on-surface); }
 .tbtn { height: 36px; padding: 0 14px; border-radius: 18px; border: 1px solid var(--outline-variant); background: transparent; color: var(--primary); font-size: 14px; font-weight: 500; cursor: pointer; }
 .tbtn.danger { color: var(--bad); }
 .tbtn:disabled { opacity: .5; cursor: default; }
-.edit-area { width: 100%; min-height: 140px; border-radius: 8px; border: 1px solid var(--outline); background: var(--surface); color: var(--on-surface); padding: 12px; font: inherit; font-size: 14px; line-height: 20px; resize: vertical; }
+.edit-area { width: 100%; min-height: 140px; border-radius: 8px; border: 1px solid var(--outline); background: var(--surface); color: var(--on-surface); padding: 12px; font: inherit; font-size: 16px; line-height: 22px; resize: vertical; }
+input, textarea, select { font-size: max(16px, 1em); }
 .edit-area:focus { outline: 2px solid var(--primary); border-color: transparent; }
 .ppost.cancelled .strip, .ppost.cancelled .ptext { opacity: .45; }
 .chan { display: grid; gap: 8px; }
@@ -306,7 +307,7 @@ a.item-text { color: var(--on-surface); }
 .bubble.cl { justify-self: start; background: var(--surface-cont-high); border-bottom-left-radius: 6px; }
 .bubble .meta { display: block; font-size: 11px; color: var(--on-variant); margin-top: 4px; }
 .composer { display: grid; grid-template-columns: auto 1fr auto; gap: 8px; align-items: end; padding: 8px 16px 16px; border-top: 1px solid var(--outline-variant); }
-.composer textarea { min-height: 44px; max-height: 160px; resize: none; border-radius: 22px; border: 1px solid var(--outline); background: var(--surface); color: var(--on-surface); padding: 11px 16px; font: inherit; font-size: 15px; }
+.composer textarea { min-height: 44px; max-height: 160px; resize: none; border-radius: 22px; border: 1px solid var(--outline); background: var(--surface); color: var(--on-surface); padding: 11px 16px; font: inherit; font-size: 16px; }
 .composer textarea:focus { outline: 2px solid var(--primary); border-color: transparent; }
 .sheet.chat { grid-template-rows: auto minmax(0, 1fr) auto auto; height: 86vh; }
 @media (min-width: 840px) { .sheet.chat { height: 80vh; } }
@@ -917,7 +918,7 @@ nav.navbar {
         const ta = el('textarea', 'edit-area'); ta.value = r.text || '';
         const save = el('button', 'btn', 'Opslaan'); const cancel = el('button', 'tbtn', 'Annuleren');
         const row = el('div', 'pactions'); row.append(save, cancel);
-        txt.replaceWith(ta); acts.replaceWith(row); ta.focus();
+        txt.replaceWith(ta); acts.replaceWith(row); box.querySelectorAll('.more').forEach((m) => { m.hidden = true; }); ta.focus();
         cancel.addEventListener('click', () => renderPlanning());
         save.addEventListener('click', async () => {
           save.disabled = true; save.textContent = 'Opslaan…';
