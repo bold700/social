@@ -182,7 +182,9 @@ a.item-text { color: var(--on-surface); }
 
 .progress { height: 6px; border-radius: 3px; background: var(--outline-variant); overflow: hidden; }
 .progress span { display: block; height: 100%; background: var(--primary); border-radius: 3px; transition: width .4s ease-out; }
-.check { display: grid; grid-template-columns: 24px 1fr; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--outline-variant); align-items: start; }
+.check { display: grid; grid-template-columns: 24px 1fr; gap: 12px; padding: 12px 0; border: 0; border-bottom: 1px solid var(--outline-variant); align-items: start; width: 100%; background: none; text-align: left; cursor: pointer; font: inherit; color: inherit; }
+.check:active .box { transform: scale(.92); }
+.check:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; border-radius: 8px; }
 .check:last-child { border-bottom: 0; }
 .box { width: 22px; height: 22px; border-radius: 6px; border: 2px solid var(--outline); display: grid; place-items: center; margin-top: 1px; }
 .box.on { background: var(--primary); border-color: var(--primary); color: var(--on-primary); }
@@ -290,7 +292,7 @@ nav.navbar {
       <h2 class="title">Foto's die nog nodig zijn</h2>
       <div class="big-row"><span class="big" id="sup-done">–</span><span class="note" id="sup-total"></span></div>
       <div class="progress"><span id="sup-bar" style="width: 0"></span></div>
-      <p class="note">Zet de foto in de map _beeld voor carrousels en zet in de sheet Klaar op ja.</p>
+      <p class="note">Zet de foto in de map _beeld voor carrousels en tik hem hieronder af.</p>
       <a class="btn" href="https://docs.google.com/spreadsheets/d/1CAeRX-7b9v8JYetQZffN3DG6ovmXw-64EInAfVXvAmE/edit#gid=1434862705" target="_blank" rel="noopener">Open de sheet</a>
     </article>
     <article class="card"><div id="supply"></div></article>
@@ -629,13 +631,38 @@ nav.navbar {
     $('#sup-bar').style.width = s.length ? (done / s.length) * 100 + '%' : '0%';
     const tick = '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z"/></svg>';
     $('#supply').replaceChildren(...(s.length ? s.map((r) => {
-      const row = el('div', 'check' + (r.klaar === 'ja' ? ' done' : ''));
-      const box = el('span', 'box' + (r.klaar === 'ja' ? ' on' : ''));
-      if (r.klaar === 'ja') box.innerHTML = tick;
+      const on = r.klaar === 'ja';
+      const row = el('button', 'check' + (on ? ' done' : ''));
+      row.type = 'button';
+      row.setAttribute('role', 'checkbox');
+      row.setAttribute('aria-checked', String(on));
+      const box = el('span', 'box' + (on ? ' on' : ''));
+      if (on) box.innerHTML = tick;
       const t = el('div'); t.append(el('div', 't', r.wat), el('div', 's', r.waarvoor));
       row.append(box, t);
+      row.addEventListener('click', () => toggleSupply(r));
       return row;
     }) : [el('p', 'note', 'Niets meer nodig.')]));
+  }
+
+  // Tick a photo off: show it at once, save it, undo when saving fails.
+  async function toggleSupply(r) {
+    const before = r.klaar;
+    r.klaar = before === 'ja' ? 'nee' : 'ja';
+    renderSupply();
+    try {
+      const res = await fetch(API.replace('action=app', 'action=app_supply'), {
+        method: 'POST',
+        headers: { 'x-app-key': key, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nr: r.nr, klaar: r.klaar === 'ja' }),
+      });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      store.set('b7data', JSON.stringify(data));
+    } catch (e) {
+      r.klaar = before;
+      renderSupply();
+      $('#updated').textContent = 'Afvinken lukte niet. Probeer het opnieuw.';
+    }
   }
 
   window.addEventListener('resize', () => { if (data && current === 'resultaten') drawViews(); });
