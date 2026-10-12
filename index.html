@@ -239,6 +239,26 @@ a.item-text { color: var(--on-surface); }
 .qthumb img, .qthumb video { width: 100%; height: 100%; object-fit: cover; display: block; pointer-events: none; }
 .qthumb .n { position: absolute; right: 3px; bottom: 3px; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 8px; background: rgba(43, 42, 40, .75); color: #efe5dc; font-size: 10px; line-height: 16px; text-align: center; }
 
+/* Checklist row with photo picker */
+.sup-row { display: flex; align-items: flex-start; gap: 8px; border-bottom: 1px solid var(--outline-variant); }
+.sup-row:last-child { border-bottom: 0; }
+.sup-row .check { border-bottom: 0; flex: 1; min-width: 0; }
+.pick-btn { flex: none; margin-top: 8px; height: 32px; padding: 0 12px; border-radius: 16px; border: 1px solid var(--outline-variant); background: transparent; color: var(--primary); font-size: 13px; font-weight: 500; cursor: pointer; white-space: nowrap; }
+.pick-btn:active { background: var(--primary-cont); }
+.scrim { position: fixed; inset: 0; z-index: 40; background: rgba(43, 42, 40, .55); display: flex; align-items: flex-end; justify-content: center; }
+.sheet { background: var(--surface-cont-low); color: var(--on-surface); width: 100%; max-width: 720px; max-height: 86vh; border-radius: 28px 28px 0 0; display: grid; grid-template-rows: auto minmax(0, 1fr); padding-bottom: env(safe-area-inset-bottom, 0px); }
+@media (min-width: 840px) { .scrim { align-items: center; } .sheet { border-radius: 28px; max-height: 80vh; } }
+.sheet-head { display: flex; align-items: center; gap: 8px; padding: 16px 8px 8px 24px; }
+.sheet-head h2 { flex: 1; margin: 0; font-size: 18px; line-height: 24px; font-weight: 500; }
+.sheet-head p { margin: 2px 0 0; font-size: 12px; color: var(--on-variant); font-weight: 400; }
+.sheet-body { overflow: auto; padding: 0 16px 24px; display: grid; gap: 12px; align-content: start; }
+.pgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 8px; }
+.ptile { border: 0; padding: 0; background: none; cursor: pointer; display: grid; gap: 4px; text-align: left; color: inherit; }
+.ptile .im { aspect-ratio: 4 / 5; border-radius: 10px; overflow: hidden; background: var(--surface-cont-high); }
+.ptile img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.ptile span { font-size: 11px; line-height: 14px; color: var(--on-variant); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ptile:focus-visible .im, .ptile:hover .im { outline: 3px solid var(--primary); outline-offset: 1px; }
+
 /* Navigation bar (M3) */
 nav.navbar {
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 10; background: var(--surface-cont);
@@ -372,7 +392,7 @@ nav.navbar {
       <h2 class="title">Foto's die nog nodig zijn</h2>
       <div class="big-row"><span class="big" id="sup-done">–</span><span class="note" id="sup-total"></span></div>
       <div class="progress"><span id="sup-bar" style="width: 0"></span></div>
-      <p class="note">Zet de foto in Werk van vandaag of _beeld voor carrousels. Het systeem herkent hem, vinkt hem af en laat zien waarvoor hij gebruikt wordt.</p>
+      <p class="note">Kies zelf een foto uit Drive met ‘Kies foto’, of zet hem in Werk van vandaag. Het systeem herkent hem dan zelf en vinkt hem af.</p>
     </article>
     <article class="card"><div id="supply"></div></article>
   </section>
@@ -941,9 +961,9 @@ nav.navbar {
       t.append(el('div', 't', r.wat), el('div', 's', r.waarvoor));
       if (on && (r.photo_url || r.used_for || r.photo_name)) {
         const tr = el('div', 'thumbrow');
-        if (r.photo_url) { const img = el('img'); img.src = r.photo_url; img.alt = ''; img.loading = 'lazy'; tr.appendChild(img); }
+        if (r.photo_url) { const img = el('img'); img.src = r.photo_url; img.alt = ''; img.loading = 'lazy'; img.referrerPolicy = 'no-referrer'; tr.appendChild(img); }
         const u = el('div', 'used');
-        u.append(el('div', null, r.used_for ? 'Gebruikt voor: ' + r.used_for : 'Foto gevonden'), el('div', null, r.photo_name || ''));
+        u.append(el('div', null, r.used_for ? 'Gebruikt voor: ' + r.used_for : (r.updated_by === 'app' ? 'Door jou gekozen' : 'Foto gevonden')), el('div', null, r.photo_name || ''));
         tr.appendChild(u);
         t.appendChild(tr);
       } else if (on) {
@@ -951,7 +971,13 @@ nav.navbar {
       }
       b.append(box, t);
       b.addEventListener('click', () => toggleSupply(r));
-      return b;
+      const wrap = el('div', 'sup-row');
+      const pick = el('button', 'pick-btn', r.photo_url ? 'Andere foto' : 'Kies foto');
+      pick.type = 'button';
+      pick.setAttribute('aria-label', (r.photo_url ? 'Andere foto kiezen voor: ' : 'Foto kiezen voor: ') + r.wat);
+      pick.addEventListener('click', () => openPicker(r));
+      wrap.append(b, pick);
+      return wrap;
     };
     const open = s.filter((r) => r.klaar !== 'ja');
     const closed = s.filter((r) => r.klaar === 'ja');
@@ -959,6 +985,70 @@ nav.navbar {
     if (open.length) out.push(...open.map(row)); else out.push(el('p', 'note', 'Alles is binnen. Nieuwe foto’s verschijnen hier vanzelf.'));
     if (closed.length) { out.push(el('div', 'done-h', 'Afgehandeld (' + closed.length + ')')); out.push(...closed.map(row)); }
     $('#supply').replaceChildren(...out);
+  }
+
+  // Pick a photo from Drive (Beeldbank + Werk van vandaag) for a checklist item.
+  let photoCache = null;
+  async function openPicker(r) {
+    const scrim = el('div', 'scrim');
+    const sheet = el('div', 'sheet'); sheet.setAttribute('role', 'dialog'); sheet.setAttribute('aria-modal', 'true'); sheet.setAttribute('aria-label', 'Kies een foto');
+    const head = el('div', 'sheet-head');
+    const ht = el('h2', null, 'Kies een foto'); ht.appendChild(el('p', null, r.wat));
+    const close = el('button', 'icon-btn'); close.setAttribute('aria-label', 'Sluiten');
+    close.innerHTML = '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>';
+    head.append(ht, close);
+    const body = el('div', 'sheet-body');
+    body.appendChild(el('p', 'note', 'Foto’s laden uit Drive…'));
+    sheet.append(head, body); scrim.appendChild(sheet); document.body.appendChild(scrim); document.body.style.overflow = 'hidden';
+    const shut = () => { scrim.remove(); document.body.style.overflow = ''; document.removeEventListener('keydown', esc); };
+    const esc = (e) => { if (e.key === 'Escape') shut(); };
+    document.addEventListener('keydown', esc);
+    close.addEventListener('click', shut);
+    scrim.addEventListener('click', (e) => { if (e.target === scrim) shut(); });
+    try {
+      if (!photoCache) {
+        const res = await fetch(API.replace('action=app', 'action=app_photos'), { headers: { 'x-app-key': key }, cache: 'no-store' });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        photoCache = (await res.json()).photos || [];
+      }
+      const used = new Set((data.supply || []).filter((x) => x.nr !== r.nr).map((x) => x.photo_id).filter(Boolean));
+      const groups = {};
+      photoCache.forEach((p) => { (groups[p.folder] = groups[p.folder] || []).push(p); });
+      const out = [];
+      Object.keys(groups).forEach((g) => {
+        out.push(el('p', 'group-h', g + ' (' + groups[g].length + ')'));
+        const grid = el('div', 'pgrid');
+        groups[g].forEach((p) => {
+          const t = el('button', 'ptile'); t.type = 'button'; t.setAttribute('aria-label', 'Kies ' + p.name);
+          const im = el('div', 'im'); const img = el('img'); img.src = p.thumb; img.alt = ''; img.loading = 'lazy'; img.referrerPolicy = 'no-referrer'; im.appendChild(img);
+          t.append(im, el('span', null, (used.has(p.id) ? '✓ al gebruikt · ' : '') + p.name));
+          t.addEventListener('click', () => { shut(); pickPhoto(r, p); });
+          grid.appendChild(t);
+        });
+        out.push(grid);
+      });
+      body.replaceChildren(...(out.length ? out : [el('p', 'note', 'Geen foto’s gevonden in Beeldbank of Werk van vandaag.')]));
+    } catch (e) {
+      body.replaceChildren(el('p', 'error', 'Foto’s laden lukte niet. Probeer het zo opnieuw.'));
+    }
+  }
+
+  async function pickPhoto(r, p) {
+    const before = { ...r };
+    Object.assign(r, { klaar: 'ja', photo_id: p.id, photo_name: p.name, photo_url: p.thumb, used_for: null, updated_by: 'app' });
+    renderSupply();
+    try {
+      const res = await fetch(API.replace('action=app', 'action=app_pick'), {
+        method: 'POST', headers: { 'x-app-key': key, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nr: r.nr, photo_id: p.id, photo_name: p.name }),
+      });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      store.set('b7data', JSON.stringify(data));
+    } catch (e) {
+      Object.assign(r, before);
+      renderSupply();
+      $('#updated').textContent = 'Foto kiezen lukte niet. Probeer het opnieuw.';
+    }
   }
 
   // Tick a photo off: show it at once, save it, undo when saving fails.
