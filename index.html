@@ -107,7 +107,8 @@ main { padding: 4px 16px calc(96px + env(safe-area-inset-bottom, 0px)); max-widt
 .actions li::before { content: counter(a); width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; font-weight: 500; background: var(--surface); }
 
 /* Account cards: horizontal pager on phones */
-.accounts { display: grid; grid-auto-flow: column; grid-auto-columns: 86%; gap: 12px; overflow-x: auto; scroll-snap-type: x mandatory; margin: 0 -16px; padding: 0 16px; scrollbar-width: none; }
+.accounts { display: grid; grid-auto-flow: column; grid-auto-columns: 86%; gap: 12px; overflow-x: auto; scroll-snap-type: x mandatory; scroll-padding-inline: 16px; margin: 0 -16px; padding: 0 16px; scrollbar-width: none; }
+.accounts::after { content: ""; width: 4px; }
 .accounts::-webkit-scrollbar { display: none; }
 .accounts .card { scroll-snap-align: start; }
 @media (min-width: 640px) { .accounts { grid-auto-flow: row; grid-template-columns: repeat(3, 1fr); grid-auto-columns: auto; margin: 0; padding: 0; overflow: visible; } }
