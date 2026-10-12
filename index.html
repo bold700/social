@@ -153,7 +153,7 @@ main { padding: 4px 16px calc(96px + env(safe-area-inset-bottom, 0px)); max-widt
 .item-top { display: flex; gap: 8px; align-items: center; font-size: 12px; color: var(--on-variant); flex-wrap: wrap; }
 .item-text { font-size: 14px; line-height: 20px; color: var(--on-surface); text-decoration: none; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 a.item-text { color: var(--on-surface); }
-.metrics { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12px; color: var(--on-variant); font-variant-numeric: tabular-nums; }
+.metrics { display: flex; gap: 4px 14px; flex-wrap: wrap; font-size: 12px; color: var(--on-variant); font-variant-numeric: tabular-nums; }
 .metrics b { color: var(--on-surface); font-weight: 500; }
 .pill { display: inline-flex; align-items: center; gap: 5px; height: 22px; padding: 0 8px; border-radius: 6px; font-size: 11px; font-weight: 500; border: 1px solid var(--outline-variant); color: var(--on-variant); white-space: nowrap; }
 .pill::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
@@ -235,7 +235,7 @@ a.item-text { color: var(--on-surface); }
 
 .item.has-thumb { grid-template-columns: 48px minmax(0, 1fr); column-gap: 12px; }
 .item.has-thumb > :not(.qthumb) { grid-column: 2; }
-.qthumb { grid-column: 1; grid-row: 1 / span 2; width: 48px; aspect-ratio: 4 / 5; border-radius: 6px; overflow: hidden; border: 0; padding: 0; background: var(--surface-cont-high); position: relative; cursor: pointer; align-self: start; }
+.qthumb { grid-column: 1; width: 48px; aspect-ratio: 4 / 5; border-radius: 6px; overflow: hidden; border: 0; padding: 0; background: var(--surface-cont-high); position: relative; cursor: pointer; align-self: start; }
 .qthumb img, .qthumb video { width: 100%; height: 100%; object-fit: cover; display: block; pointer-events: none; }
 .qthumb .n { position: absolute; right: 3px; bottom: 3px; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 8px; background: rgba(43, 42, 40, .75); color: #efe5dc; font-size: 10px; line-height: 16px; text-align: center; }
 
@@ -643,6 +643,19 @@ nav.navbar {
     document.querySelectorAll('#sort button').forEach((o) => o.setAttribute('aria-pressed', String(o === b)));
     drawPosts();
   }));
+  // Small 4:5 preview that opens all images of a post.
+  function thumbBtn(media, label, rows) {
+    const tb = el('button', 'qthumb'); tb.setAttribute('aria-label', 'Bekijk ' + (media.length === 1 ? 'het beeld' : 'de ' + media.length + ' beelden'));
+    tb.style.gridRow = '1 / span ' + (rows || 2);
+    const u = media[0];
+    if (isVideo(u)) { const v = el('video'); v.src = u + '#t=0.5'; v.muted = true; v.playsInline = true; v.preload = 'metadata'; tb.appendChild(v); }
+    else { const im = el('img'); im.src = u; im.alt = ''; im.loading = 'lazy'; im.decoding = 'async'; im.referrerPolicy = 'no-referrer'; im.onerror = () => { tb.style.visibility = 'hidden'; }; tb.appendChild(im); }
+    if (media.length > 1) tb.appendChild(el('span', 'n', String(media.length)));
+    else if (isVideo(u)) tb.appendChild(el('span', 'n', '▶'));
+    tb.addEventListener('click', () => openViewer(media, 0, label));
+    return tb;
+  }
+
   function drawPosts() {
     let rows = (data.posts || []).slice();
     if (postState.acc) rows = rows.filter((r) => r.account === postState.acc);
@@ -659,6 +672,8 @@ nav.navbar {
       const mt = el('div', 'metrics');
       [['reach', 'bereik'], ['views', 'weergaven'], ['likes', 'likes'], ['comments', 'reacties']].forEach(([f, l]) => { const s = el('span'); s.append(el('b', null, fmt(r[f])), document.createTextNode(' ' + l)); mt.appendChild(s); });
       const e = el('span'); e.append(el('b', null, pct(r.engagement_rate)), document.createTextNode(' engagement')); mt.appendChild(e);
+      const media = ((data.post_media || {})[r.ig_media_id] || []).filter(Boolean);
+      if (media.length) { it.classList.add('has-thumb'); it.append(thumbBtn(media, r.account + ' · ' + fDate(r.posted), 3)); }
       it.append(top, txt, mt);
       return it;
     }));
@@ -820,14 +835,7 @@ nav.navbar {
       const media = ((data.media || {})[r.id] || []).filter(Boolean);
       if (media.length) {
         it.classList.add('has-thumb');
-        const tb = el('button', 'qthumb'); tb.setAttribute('aria-label', 'Bekijk ' + (media.length === 1 ? 'het beeld' : 'de ' + media.length + ' beelden'));
-        const u = media[0];
-        if (isVideo(u)) { const v = el('video'); v.src = u + '#t=0.5'; v.muted = true; v.playsInline = true; v.preload = 'metadata'; tb.appendChild(v); }
-        else { const im = el('img'); im.src = u; im.alt = ''; im.loading = 'lazy'; im.decoding = 'async'; tb.appendChild(im); }
-        if (media.length > 1) tb.appendChild(el('span', 'n', String(media.length)));
-        else if (isVideo(u)) tb.appendChild(el('span', 'n', '▶'));
-        tb.addEventListener('click', () => openViewer(media, 0, (r.channel === 'Instagram' ? r.account : 'LinkedIn') + ' · ' + fWhen(r.scheduled)));
-        it.append(tb);
+        it.append(thumbBtn(media, (r.channel === 'Instagram' ? r.account : 'LinkedIn') + ' · ' + fWhen(r.scheduled), 2));
       }
       it.append(top, txt);
       return it;
