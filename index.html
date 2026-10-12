@@ -201,14 +201,46 @@ a.item-text { color: var(--on-surface); }
 .btn { display: inline-flex; align-items: center; justify-content: center; height: 40px; padding: 0 24px; border-radius: 20px; background: var(--primary); color: var(--on-primary); font-weight: 500; font-size: 14px; letter-spacing: 0.1px; text-decoration: none; border: 0; cursor: pointer; width: fit-content; }
 .btn.tonal { background: var(--primary-cont); color: var(--primary); }
 
+/* Planning */
+.plan-sum { display: grid; }
+.plan-sum div { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--outline-variant); }
+.plan-sum div:last-child { border-bottom: 0; padding-bottom: 0; }
+.plan-sum .l { flex: 1; font-size: 14px; display: flex; align-items: center; gap: 8px; min-width: 0; }
+.plan-sum .v { font-family: var(--font-display); font-size: 22px; line-height: 28px; font-variant-numeric: tabular-nums; }
+.plan-sum .v.zero { color: var(--warn); }
+.plan-sum .hint { font-size: 12px; color: var(--warn); }
+.day-h { font-size: 14px; font-weight: 500; margin: 8px 0 -8px; display: flex; gap: 8px; align-items: baseline; }
+.day-h span { font-size: 12px; font-weight: 400; color: var(--on-variant); }
+.ppost { display: grid; gap: 10px; }
+.ppost .head { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; font-size: 12px; color: var(--on-variant); }
+.ppost .head b { font-size: 14px; font-weight: 500; color: var(--on-surface); font-variant-numeric: tabular-nums; }
+.ch-ico { width: 18px; height: 18px; border-radius: 5px; display: inline-grid; place-items: center; font-size: 10px; font-weight: 700; color: var(--surface); flex: none; }
+.strip { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; margin: 0 -16px; padding: 0 16px; scroll-snap-type: x proximity; }
+.strip::-webkit-scrollbar { display: none; }
+.strip button { flex: none; width: 76px; aspect-ratio: 4 / 5; border-radius: 8px; overflow: hidden; border: 0; padding: 0; background: var(--surface-cont-high); position: relative; cursor: pointer; scroll-snap-align: start; }
+.strip img, .strip video { width: 100%; height: 100%; object-fit: cover; display: block; pointer-events: none; }
+.strip .play { position: absolute; inset: auto 6px 6px auto; width: 20px; height: 20px; border-radius: 50%; background: rgba(43, 42, 40, .7); display: grid; place-items: center; }
+.strip .play svg { width: 12px; height: 12px; fill: #efe5dc; }
+.ptext { font-size: 14px; line-height: 20px; white-space: pre-line; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; margin: 0; }
+.ptext.open { display: block; }
+.more { border: 0; background: none; color: var(--primary); font-weight: 500; font-size: 14px; padding: 0; cursor: pointer; width: fit-content; }
+.viewer { position: fixed; inset: 0; z-index: 30; background: rgba(43, 42, 40, .96); display: grid; grid-template-rows: auto 1fr auto; }
+.viewer .vbar { display: flex; justify-content: space-between; align-items: center; padding: calc(env(safe-area-inset-top, 0px) + 8px) 8px 8px 16px; color: #efe5dc; font-size: 14px; }
+.viewer .vbar .icon-btn { color: #efe5dc; }
+.viewer .slides { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; }
+.viewer .slides::-webkit-scrollbar { display: none; }
+.viewer .slides > div { flex: none; width: 100%; height: 100%; display: grid; place-items: center; scroll-snap-align: center; padding: 8px; }
+.viewer img, .viewer video { max-width: 100%; max-height: 100%; border-radius: 8px; }
+.viewer .vfoot { padding: 8px 16px calc(env(safe-area-inset-bottom, 0px) + 16px); color: #c4b9ae; font-size: 12px; text-align: center; }
+
 /* Navigation bar (M3) */
 nav.navbar {
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 10; background: var(--surface-cont);
-  display: grid; grid-template-columns: repeat(4, 1fr);
+  display: grid; grid-template-columns: repeat(5, 1fr);
   padding: 12px 0 calc(env(safe-area-inset-bottom, 0px) + 12px);
 }
 .nav-item { border: 0; background: none; display: grid; justify-items: center; gap: 4px; cursor: pointer; padding: 0; font-size: 12px; font-weight: 500; letter-spacing: 0.5px; color: var(--on-variant); }
-.nav-ind { width: 64px; height: 32px; border-radius: 16px; display: grid; place-items: center; transition: background .2s; }
+.nav-ind { width: 56px; height: 32px; border-radius: 16px; display: grid; place-items: center; transition: background .2s; }
 .nav-ind svg { width: 24px; height: 24px; }
 .nav-item[aria-current="page"] { color: var(--on-surface); }
 .nav-item[aria-current="page"] .nav-ind { background: var(--primary-cont); color: var(--primary); }
@@ -264,6 +296,16 @@ nav.navbar {
     </article>
   </section>
 
+  <!-- PLANNING -->
+  <section class="page" id="p-planning" data-title="Planning" hidden>
+    <article class="card high">
+      <div><h2 class="title" id="plan-title">Gepland</h2><p class="note" id="plan-note">Alles wat klaarstaat, op alle kanalen.</p></div>
+      <div class="plan-sum" id="plan-sum"></div>
+    </article>
+    <div class="chips" id="plan-chips" role="group" aria-label="Kanaal"></div>
+    <div id="plan-list" style="display: grid; gap: 16px"></div>
+  </section>
+
   <!-- POSTS -->
   <section class="page" id="p-posts" data-title="Posts" hidden>
     <article class="card">
@@ -292,7 +334,7 @@ nav.navbar {
       <div id="health"></div>
     </article>
     <p class="group-h">Komt eraan</p>
-    <article class="card"><div class="list" id="upcoming"></div></article>
+    <article class="card"><div class="list" id="upcoming"></div><button class="btn tonal" id="to-planning">Bekijk de planning met beelden</button></article>
     <p class="group-h">Geplaatst</p>
     <article class="card"><div class="list" id="done"></div></article>
   </section>
@@ -312,8 +354,9 @@ nav.navbar {
 
 <nav class="navbar" id="navbar" aria-label="Onderdelen">
   <button class="nav-item" data-page="resultaten" aria-current="page"><span class="nav-ind"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M5 9.2h3V19H5zM10.6 5h2.8v14h-2.8zm5.6 8H19v6h-2.8z"/></svg></span>Resultaten</button>
+  <button class="nav-item" data-page="planning"><span class="nav-ind"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M19 4h-1V2h-2v2H8V2H6v2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zm0 16H5V10h14v10zM9 14H7v-2h2v2zm4 0h-2v-2h2v2zm4 0h-2v-2h2v2zm-8 4H7v-2h2v2zm4 0h-2v-2h2v2zm4 0h-2v-2h2v2z"/></svg></span>Planning</button>
   <button class="nav-item" data-page="posts"><span class="nav-ind"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M19 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2zm0 16H5V5h14v14zm-5.04-6.71-2.75 3.54-1.96-2.36L6.5 17h11l-3.54-4.71z"/></svg></span>Posts</button>
-  <button class="nav-item" data-page="autopilot"><span class="nav-ind"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M19 4h-1V2h-2v2H8V2H6v2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zm0 16H5V10h14v10zm0-12H5V6h14v2zm-8.5 10.5L7 15l1.4-1.4 2.1 2.1 4.6-4.6 1.4 1.4-6 6z"/></svg></span>Autopilot</button>
+  <button class="nav-item" data-page="autopilot"><span class="nav-ind"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 6v3l4-4-4-4v3a8 8 0 0 0-6.76 12.26L6.7 14.8A5.9 5.9 0 0 1 6 12c0-3.31 2.69-6 6-6zm6.76 1.74L17.3 9.2c.44.84.7 1.79.7 2.8 0 3.31-2.69 6-6 6v-3l-4 4 4 4v-3a8 8 0 0 0 6.76-12.26z"/></svg></span>Autopilot</button>
   <button class="nav-item" data-page="aanleveren"><span class="nav-ind"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 15.2a3.2 3.2 0 1 0 0-6.4 3.2 3.2 0 0 0 0 6.4zM9 2 7.17 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-3.17L15 2H9zm3 15a5 5 0 1 1 0-10 5 5 0 0 1 0 10z"/></svg></span>Aanleveren</button>
 </nav>
 
@@ -402,6 +445,7 @@ nav.navbar {
   }
   document.querySelectorAll('.nav-item').forEach((b) => b.addEventListener('click', () => show(b.dataset.page)));
   $('#refresh').addEventListener('click', load);
+  $('#to-planning').addEventListener('click', () => show('planning'));
   window.addEventListener('scroll', () => $('#topbar').classList.toggle('scrolled', window.scrollY > 4), { passive: true });
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && key) load(); });
 
@@ -409,6 +453,7 @@ nav.navbar {
   function render() {
     if (!data) return;
     renderResults();
+    renderPlanning();
     renderPosts();
     renderAutopilot();
     renderLeads();
@@ -593,6 +638,127 @@ nav.navbar {
     if (!rows.length) $('#posts').appendChild(el('p', 'note', 'Geen posts gevonden.'));
   }
 
+
+  // ---------- Planning: every channel in one list, with the images ----------
+  const CHANNELS = [
+    { id: 'all', label: 'Alles' },
+    { id: 'kennykennethh', label: 'kennykennethh', ig: true },
+    { id: 'bold700agency', label: 'bold700agency', ig: true },
+    { id: 'motokenn00', label: 'motokenn00', ig: true },
+    { id: 'linkedin', label: 'LinkedIn' },
+  ];
+  const chKey = (r) => (r.channel === 'linkedin' ? 'linkedin' : r.account);
+  const LI_BLUE = '#5f5953';
+  function chIcon(k) {
+    const i = el('span', 'ch-ico', k === 'linkedin' ? 'in' : 'IG');
+    i.style.background = k === 'linkedin' ? LI_BLUE : accColor(k);
+    if (k === 'kennykennethh') i.style.color = 'var(--surface)';
+    return i;
+  }
+  const isVideo = (u) => /\.(mp4|mov|m4v|webm)(\?|$)/i.test(u);
+  const todayAms = () => new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Amsterdam' });
+  let planFilter = store.get('b7plan') || 'all';
+
+  function openViewer(media, start, label) {
+    const v = el('div', 'viewer'); v.setAttribute('role', 'dialog'); v.setAttribute('aria-label', 'Beelden');
+    const bar = el('div', 'vbar'); const cnt = el('span', null, (start + 1) + ' / ' + media.length + ' · ' + label);
+    const close = el('button', 'icon-btn'); close.setAttribute('aria-label', 'Sluiten');
+    close.innerHTML = '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>';
+    bar.append(cnt, close);
+    const slides = el('div', 'slides');
+    media.forEach((u) => {
+      const s = el('div');
+      if (isVideo(u)) { const vd = el('video'); vd.src = u; vd.controls = true; vd.playsInline = true; vd.preload = 'metadata'; s.appendChild(vd); }
+      else { const im = el('img'); im.src = u; im.alt = ''; im.decoding = 'async'; s.appendChild(im); }
+      slides.appendChild(s);
+    });
+    const foot = el('div', 'vfoot', media.length > 1 ? 'Veeg voor de volgende' : '');
+    v.append(bar, slides, foot);
+    const shut = () => { v.querySelectorAll('video').forEach((x) => x.pause()); v.remove(); document.body.style.overflow = ''; };
+    close.addEventListener('click', shut);
+    document.addEventListener('keydown', function esc(e) { if (e.key === 'Escape') { shut(); document.removeEventListener('keydown', esc); } });
+    slides.addEventListener('scroll', () => { const i = Math.round(slides.scrollLeft / slides.clientWidth); cnt.textContent = (i + 1) + ' / ' + media.length + ' · ' + label; }, { passive: true });
+    document.body.appendChild(v); document.body.style.overflow = 'hidden';
+    requestAnimationFrame(() => { slides.scrollLeft = start * slides.clientWidth; });
+  }
+
+  function planCard(r) {
+    const k = chKey(r);
+    const card = el('article', 'card ppost');
+    const head = el('div', 'head');
+    const time = String(r.scheduled || '').slice(11, 16);
+    head.append(el('b', null, time), chIcon(k), el('span', null, (k === 'linkedin' ? 'LinkedIn' : k) + ' · ' + r.type));
+    const [t, cls] = STATUS[r.status] || [r.status, ''];
+    const p = el('span', 'pill ' + cls, t); p.style.marginLeft = 'auto'; head.appendChild(p);
+    card.appendChild(head);
+    const collab = (r.collab || []).filter(Boolean);
+    if (collab.length) card.appendChild(el('p', 'note', 'Samen met ' + collab.join(', ') + ' (collab)'));
+    const media = (r.media || []).filter(Boolean);
+    if (media.length) {
+      const strip = el('div', 'strip');
+      const label = (k === 'linkedin' ? 'LinkedIn' : k) + ' · ' + fWhen(String(r.scheduled).replace('T', ' '));
+      media.forEach((u, i) => {
+        const b = el('button'); b.setAttribute('aria-label', 'Beeld ' + (i + 1) + ' van ' + media.length);
+        if (isVideo(u)) {
+          const vd = el('video'); vd.src = u + '#t=0.5'; vd.muted = true; vd.playsInline = true; vd.preload = 'metadata'; b.appendChild(vd);
+          const pl = el('span', 'play'); pl.innerHTML = '<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>'; b.appendChild(pl);
+        } else { const im = el('img'); im.src = u; im.alt = ''; im.loading = 'lazy'; im.decoding = 'async'; b.appendChild(im); }
+        b.addEventListener('click', () => openViewer(media, i, label));
+        strip.appendChild(b);
+      });
+      card.appendChild(strip);
+      card.appendChild(el('p', 'note', media.length === 1 ? (isVideo(media[0]) ? '1 video' : '1 foto') : media.length + ' beelden' + (r.doc_title ? ' · ' + r.doc_title : '')));
+    }
+    const txt = el('p', 'ptext', (r.text || '').trim().replace(/\n{2,}/g, '\n') || '(geen tekst)');
+    card.appendChild(txt);
+    if ((r.text || '').split('\n').length > 3 || (r.text || '').length > 160) {
+      const m = el('button', 'more', 'Hele tekst');
+      m.addEventListener('click', () => { const o = txt.classList.toggle('open'); m.textContent = o ? 'Minder' : 'Hele tekst'; });
+      card.appendChild(m);
+    }
+    if (r.permalink) { const a = el('a', 'more', 'Bekijk op Instagram'); a.href = r.permalink; a.target = '_blank'; a.rel = 'noopener'; card.appendChild(a); }
+    return card;
+  }
+
+  function renderPlanning() {
+    const all = (data.planning || []).slice().sort((a, b) => String(a.scheduled).localeCompare(String(b.scheduled)));
+    const today = todayAms();
+    const open = all.filter((r) => r.status === 'queued' || r.status === 'processing' || r.status === 'failed');
+    const count = (k) => open.filter((r) => k === 'all' || chKey(r) === k).length;
+    $('#plan-title').textContent = open.length + (open.length === 1 ? ' bericht gepland' : ' berichten gepland');
+    const last = open.length ? open[open.length - 1].scheduled : null;
+    $('#plan-note').textContent = last ? 'Alle kanalen, tot en met ' + fWhen(String(last).slice(0, 10)) + '.' : 'Er staat nu niets klaar.';
+    $('#plan-sum').replaceChildren(...CHANNELS.filter((c) => c.id !== 'all').map((c) => {
+      const d = el('div'); const n = count(c.id);
+      const l = el('span', 'l'); l.append(chIcon(c.id), document.createTextNode(c.label));
+      if (!n) l.appendChild(el('span', 'hint', 'niets klaar'));
+      d.append(l, el('span', 'v' + (n ? '' : ' zero'), String(n)));
+      return d;
+    }));
+    const chips = $('#plan-chips');
+    chips.replaceChildren(...CHANNELS.map((c) => {
+      const b = el('button', 'chip', c.label + ' ' + count(c.id)); b.setAttribute('aria-pressed', String(planFilter === c.id));
+      b.addEventListener('click', () => { planFilter = c.id; store.set('b7plan', c.id); renderPlanning(); });
+      return b;
+    }));
+    const rows = all.filter((r) => (planFilter === 'all' || chKey(r) === planFilter) && (String(r.scheduled).slice(0, 10) >= today || r.status !== 'published'));
+    const list = $('#plan-list');
+    if (!rows.length) { list.replaceChildren(el('p', 'note', planFilter === 'motokenn00' ? 'Voor motokenn00 staat nog niets klaar. Zet ritfoto\'s of clips in de motokenn00-map, dan plant het systeem ze in.' : 'Niets gepland voor dit kanaal.')); return; }
+    const out = []; let lastDay = '';
+    const tomorrow = new Date(Date.parse(today + 'T12:00:00Z') + 86400000).toISOString().slice(0, 10);
+    rows.forEach((r) => {
+      const day = String(r.scheduled).slice(0, 10);
+      if (day !== lastDay) {
+        lastDay = day;
+        const h = el('p', 'day-h', day === today ? 'Vandaag' : day === tomorrow ? 'Morgen' : DAYS[pDay(day).getUTCDay()] + ' ' + fDate(day));
+        if (day === today || day === tomorrow) h.appendChild(el('span', null, DAYS[pDay(day).getUTCDay()] + ' ' + fDate(day)));
+        out.push(h);
+      }
+      out.push(planCard(r));
+    });
+    list.replaceChildren(...out);
+  }
+
   // Autopilot
   const STATUS = { published: ['Live', 'ok'], queued: ['Gepland', ''], processing: ['Bezig', 'warn'], failed: ['Mislukt', 'bad'], cancelled: ['Niet posten', ''] };
   function renderAutopilot() {
@@ -630,7 +796,7 @@ nav.navbar {
     };
     const up = q.filter((r) => r.status === 'queued' || r.status === 'processing' || r.status === 'failed');
     const dn = q.filter((r) => r.status === 'published' || r.status === 'cancelled').reverse();
-    $('#upcoming').replaceChildren(...(up.length ? up.map(item) : [el('p', 'note', 'Niets gepland.')]));
+    $('#upcoming').replaceChildren(...(up.length ? up.slice(0, 3).map(item) : [el('p', 'note', 'Niets gepland.')]));
     $('#done').replaceChildren(...(dn.length ? dn.map(item) : [el('p', 'note', 'Nog niets geplaatst.')]));
   }
 
