@@ -495,6 +495,8 @@ nav.navbar {
   const nl = new Intl.NumberFormat('nl-NL');
   const $ = (s) => document.querySelector(s);
   const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+  const svgNS = 'http://www.w3.org/2000/svg';
+  const sv = (tag, attrs) => { const e = document.createElementNS(svgNS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); return e; };
   const isNum = (v) => v != null && v !== '' && !isNaN(Number(v));
   const fmt = (v) => (isNum(v) ? nl.format(Number(v)) : '–');
   const pct = (v) => (isNum(v) ? (Number(v) * 100).toLocaleString('nl-NL', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + '%' : '–');
@@ -648,8 +650,6 @@ nav.navbar {
   }
   window.addEventListener('error', (ev) => showErr('pagina', ev.error || ev.message));
 
-  const svgNS = 'http://www.w3.org/2000/svg';
-  const sv = (tag, attrs) => { const e = document.createElementNS(svgNS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); return e; };
 
   function spark(box, acc) {
     const pts = (data.daily || []).filter((r) => r.account === acc && isNum(r.views)).map((r) => ({ d: pDay(r.day), v: Number(r.views) })).sort((a, b) => a.d - b.d);
