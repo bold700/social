@@ -212,6 +212,8 @@ a.item-text { color: var(--on-surface); }
 .plan-sum .v { font-family: var(--font-display); font-size: 22px; line-height: 28px; font-variant-numeric: tabular-nums; }
 .plan-sum .v.zero { color: var(--warn); }
 .plan-sum .hint { font-size: 12px; color: var(--warn); }
+.plan-sum .li-hint { font-size: 12px; color: var(--on-variant); display: inline-flex; align-items: center; gap: 4px; }
+.plan-sum .li-hint .ch-ico { transform: scale(.85); }
 .day-h { font-size: 14px; font-weight: 500; margin: 8px 0 -8px; display: flex; gap: 8px; align-items: baseline; }
 .day-h span { font-size: 12px; font-weight: 400; color: var(--on-variant); }
 .ppost { display: grid; gap: 10px; }
@@ -782,8 +784,9 @@ nav.navbar {
     { id: 'kennykennethh', label: 'kennykennethh', ig: true },
     { id: 'bold700agency', label: 'bold700agency', ig: true },
     { id: 'motokenn00', label: 'motokenn00', ig: true },
-    { id: 'linkedin', label: 'LinkedIn' },
   ];
+  // Account a post belongs to. A LinkedIn post belongs to the Instagram account it came from.
+  const acctOf = (r) => (r.channel === 'linkedin' ? (r.src_account || 'kennykennethh') : r.account);
   const chKey = (r) => (r.channel === 'linkedin' ? 'linkedin' : r.account);
   const LI_BLUE = '#5f5953';
   function chIcon(k) {
@@ -795,6 +798,7 @@ nav.navbar {
   const isVideo = (u) => /\.(mp4|mov|m4v|webm)(\?|$)/i.test(u);
   const todayAms = () => new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Amsterdam' });
   let planFilter = store.get('b7plan') || 'all';
+  if (!['all', 'kennykennethh', 'bold700agency', 'motokenn00'].includes(planFilter)) planFilter = 'all';
 
   function openViewer(media, start, label) {
     const v = el('div', 'viewer'); v.setAttribute('role', 'dialog'); v.setAttribute('aria-label', 'Beelden');
@@ -830,6 +834,7 @@ nav.navbar {
     head.appendChild(el('span', null, (k === 'linkedin' ? 'LinkedIn' : k) + (mirror ? ' + LinkedIn' : '') + ' · ' + r.type));
     if (!mirror) { const [t, cls] = STATUS[r.status] || [r.status, '']; const p = el('span', 'pill ' + cls, t); p.style.marginLeft = 'auto'; head.appendChild(p); }
     card.appendChild(head);
+    if (r.channel === 'linkedin') card.appendChild(el('p', 'note', 'Alleen op LinkedIn' + (r.src_account ? ' · hoort bij ' + r.src_account : '')));
     const collab = (r.collab || []).filter(Boolean);
     if (collab.length) card.appendChild(el('p', 'note', 'Samen met ' + collab.join(', ') + ' (collab)'));
     const waitR = r.status === 'waiting' ? r : mirror && mirror.status === 'waiting' ? mirror : null;
@@ -935,19 +940,32 @@ nav.navbar {
     }
   }
 
+  // Group rows into posts: an Instagram post plus its LinkedIn version is one post.
+  function planPosts(rows) {
+    const byId = {}; rows.forEach((r) => { if (r.channel === 'instagram') byId[r.id] = r; });
+    const mirrorOf = {}; const paired = new Set();
+    rows.forEach((r) => { if (r.channel === 'linkedin' && r.source && byId[r.source] && !mirrorOf[r.source]) { mirrorOf[r.source] = r; paired.add(r.id); } });
+    return rows.filter((r) => !(r.channel === 'linkedin' && paired.has(r.id)))
+      .map((r) => ({ main: r, mirror: r.channel === 'instagram' ? mirrorOf[r.id] || null : null, acct: acctOf(r) }));
+  }
+  const isOpen = (r) => r && (r.status === 'waiting' || r.status === 'queued' || r.status === 'processing' || r.status === 'failed');
+
   function renderPlanning() {
     const all = (data.planning || []).slice().sort((a, b) => String(a.scheduled).localeCompare(String(b.scheduled)));
     const today = todayAms();
-    const open = all.filter((r) => r.status === 'waiting' || r.status === 'queued' || r.status === 'processing' || r.status === 'failed');
-    const waiting = open.filter((r) => r.status === 'waiting').length;
-    const count = (k) => open.filter((r) => k === 'all' || chKey(r) === k).length;
-    $('#plan-title').textContent = open.length + (open.length === 1 ? ' bericht gepland' : ' berichten gepland');
-    const last = open.length ? open[open.length - 1].scheduled : null;
-    $('#plan-note').textContent = (last ? 'Alle kanalen, tot en met ' + fWhen(String(last).slice(0, 10)) + '.' : 'Er staat nu niets klaar.') + (waiting ? ' ' + waiting + ' wacht' + (waiting === 1 ? '' : 'en') + ' nog op beeld van jou.' : '');
+    const posts = planPosts(all.filter((r) => r.status !== 'published'));
+    const open = posts.filter((p) => isOpen(p.main) || isOpen(p.mirror));
+    const waiting = open.filter((p) => p.main.status === 'waiting' || (p.mirror && p.mirror.status === 'waiting')).length;
+    const count = (k) => open.filter((p) => k === 'all' || p.acct === k).length;
+    const liCount = (k) => open.filter((p) => p.acct === k && (p.main.channel === 'linkedin' || isOpen(p.mirror))).length;
+    $('#plan-title').textContent = open.length + (open.length === 1 ? ' post gepland' : ' posts gepland');
+    const last = open.length ? open[open.length - 1].main.scheduled : null;
+    $('#plan-note').textContent = (last ? 'Alle accounts, tot en met ' + fWhen(String(last).slice(0, 10)) + '.' : 'Er staat nu niets klaar.') + (waiting ? ' ' + waiting + ' wacht' + (waiting === 1 ? '' : 'en') + ' nog op beeld van jou.' : '');
     $('#plan-sum').replaceChildren(...CHANNELS.filter((c) => c.id !== 'all').map((c) => {
-      const d = el('div'); const n = count(c.id);
+      const d = el('div'); const n = count(c.id); const li = liCount(c.id);
       const l = el('span', 'l'); l.append(chIcon(c.id), document.createTextNode(c.label));
       if (!n) l.appendChild(el('span', 'hint', 'niets klaar'));
+      else if (li) { const h = el('span', 'li-hint'); h.append(chIcon('linkedin'), document.createTextNode(li + ' ook op LinkedIn')); l.appendChild(h); }
       d.append(l, el('span', 'v' + (n ? '' : ' zero'), String(n)));
       return d;
     }));
@@ -957,17 +975,13 @@ nav.navbar {
       b.addEventListener('click', () => { planFilter = c.id; store.set('b7plan', c.id); renderPlanning(); });
       return b;
     }));
-    const rows = all.filter((r) => (planFilter === 'all' || chKey(r) === planFilter) && r.status !== 'published');
+    const shown = posts.filter((p) => planFilter === 'all' || p.acct === planFilter);
     const list = $('#plan-list');
-    if (!rows.length) { renderPipeline(); list.replaceChildren(el('p', 'note', planFilter === 'motokenn00' ? 'Voor motokenn00 staat nog niets klaar. Zet ritfoto\'s of clips in de motokenn00-map, dan plant het systeem ze in.' : 'Niets gepland voor dit kanaal.')); return; }
+    if (!shown.length) { renderPipeline(); list.replaceChildren(el('p', 'note', planFilter === 'motokenn00' ? 'Voor motokenn00 staat nog niets klaar. Zet ritfoto\'s of clips in de motokenn00-map, dan plant het systeem ze in.' : 'Niets gepland voor dit account.')); return; }
     const out = []; let lastDay = '';
     const tomorrow = new Date(Date.parse(today + 'T12:00:00Z') + 86400000).toISOString().slice(0, 10);
-    // Pair LinkedIn mirrors with their Instagram post (only when both are shown).
-    const byId = {}; rows.forEach((r) => { if (r.channel === 'instagram') byId[r.id] = r; });
-    const mirrorOf = {}; const paired = new Set();
-    rows.forEach((r) => { if (r.channel === 'linkedin' && r.source && byId[r.source] && !mirrorOf[r.source]) { mirrorOf[r.source] = r; paired.add(r.id); } });
-    rows.forEach((r) => {
-      if (r.channel === 'linkedin' && paired.has(r.id)) return;
+    shown.forEach((p) => {
+      const r = p.main;
       const day = String(r.scheduled).slice(0, 10);
       if (day !== lastDay) {
         lastDay = day;
@@ -975,7 +989,7 @@ nav.navbar {
         if (day === today || day === tomorrow) h.appendChild(el('span', null, DAYS[pDay(day).getUTCDay()] + ' ' + fDate(day)));
         out.push(h);
       }
-      out.push(planCard(r, r.channel === 'instagram' ? mirrorOf[r.id] : null));
+      out.push(planCard(r, p.mirror));
     });
     list.replaceChildren(...out);
     renderPipeline();
