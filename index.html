@@ -339,6 +339,12 @@ input, textarea, select { font-size: max(16px, 1em); }
 .idea-drop { display: grid; place-items: center; min-height: 180px; border: 1.5px dashed var(--outline); border-radius: 16px; color: var(--primary); font-weight: 500; cursor: pointer; overflow: hidden; text-align: center; padding: 12px; }
 .idea-drop img, .idea-drop video { max-width: 100%; max-height: 42vh; border-radius: 12px; display: block; }
 .rules { display: grid; gap: 8px; }
+.acc-row { display: flex; gap: 12px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--outline-variant); }
+.acc-row:last-of-type { border-bottom: 0; }
+.acc-row .ch-ico { width: 28px; height: 28px; border-radius: 8px; font-size: 12px; }
+.acc-row b { display: block; font-size: 14px; font-weight: 500; }
+.acc-row .k { display: block; font-size: 12px; color: var(--on-variant); }
+.acc-row .k.warn { color: var(--secondary); }
 .rules details { border: 1px solid var(--outline-variant); border-radius: 14px; }
 .rules summary { list-style: none; cursor: pointer; padding: 12px 14px; display: flex; align-items: center; font-weight: 500; font-size: 15px; }
 .rules summary::-webkit-details-marker { display: none; }
@@ -424,8 +430,8 @@ nav.navbar {
   <svg class="logo" viewBox="0 0 32 34" aria-hidden="true"><path fill="var(--primary)" d="M26.118 15.9781C27.9616 15.2318 29.3663 14.1344 30.4198 12.6859C31.4733 11.2373 32 9.52538 32 7.50617C32 5.09191 31.0343 3.20439 29.1029 1.93141C27.2593 0.702332 24.7133 0.0438957 21.3772 0H0V8.2524H6.2332V6.2332H11.9396L0 33.0096H15.7147C20.192 33.0096 23.7915 32.1317 26.513 30.3759C29.2346 28.62 30.5514 26.0302 30.5514 22.6063C30.5514 20.9822 30.1564 19.6653 29.4101 18.524C28.6639 17.3827 27.5665 16.5487 26.118 15.9781ZM21.2016 26.0302C20.0165 26.8642 18.3484 27.2593 16.1975 27.2593H9.34979L12.9931 19.0946H18.0412C21.3333 19.0946 23.0014 20.2359 23.0014 22.4746C23.0014 24.0549 22.3868 25.1962 21.2016 26.0302ZM22.3429 12.4225C21.2455 13.1687 19.6653 13.5638 17.6461 13.5638H15.4513L18.6996 6.27709H19.1824C22.4307 6.27709 24.0549 7.2428 24.0549 9.17421C24.011 10.5789 23.4403 11.6763 22.3429 12.4225Z"/></svg>
   <h1 id="page-title">Resultaten</h1>
   <button class="btn tonal" id="install" hidden style="height: 32px; padding: 0 16px">Installeer als app</button>
-  <button class="icon-btn" id="rules-btn" aria-label="Regels">
-    <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M3 17v2h6v-2H3zM3 5v2h10V5H3zm10 16v-2h8v-2h-8v-2h-2v6h2zM7 9v2H3v2h4v2h2V9H7zm14 4v-2H11v2h10zm-6-4h2V7h4V5h-4V3h-2v6z"/></svg>
+  <button class="icon-btn" id="settings-btn" aria-label="Instellingen">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M19.14 12.94c.04-.31.06-.63.06-.94s-.02-.63-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.49.49 0 0 0-.59-.22l-2.39.96a7 7 0 0 0-1.62-.94l-.36-2.54A.48.48 0 0 0 13.92 2h-3.84a.48.48 0 0 0-.48.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96a.49.49 0 0 0-.59.22L2.72 8.47a.49.49 0 0 0 .12.61l2.03 1.58c-.05.31-.07.63-.07.94s.02.63.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.25.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32a.49.49 0 0 0-.12-.61l-2.01-1.58zM12 15.6A3.6 3.6 0 1 1 12 8.4a3.6 3.6 0 0 1 0 7.2z"/></svg>
   </button>
   <button class="icon-btn" id="refresh" aria-label="Vernieuwen">
     <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M17.65 6.35A7.96 7.96 0 0 0 12 4a8 8 0 1 0 7.74 10h-2.08A6 6 0 1 1 12 6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
@@ -500,18 +506,32 @@ nav.navbar {
     </div>
   </section>
 
-  <!-- LEADS + draait alles -->
+  <!-- LEADS -->
   <section class="page" id="p-leads" data-title="Leads" hidden>
     <article class="card high" id="leads-card">
-      <div><h2 class="title">Leads uit reacties</h2><p class="note">Reacties waarin iemand vraagt naar een prijs, een app, een website of training. Wordt elke 10 minuten gecontroleerd.</p></div>
-      <div id="push-box"></div>
+      <div><h2 class="title">Leads uit reacties</h2><p class="note">Reacties waarin iemand vraagt naar een prijs, een app, een website of training. Wordt elke 10 minuten gecontroleerd. Meldingen zet je aan bij Instellingen.</p></div>
       <div class="list" id="leads"></div>
     </article>
+  </section>
+
+  <!-- INSTELLINGEN -->
+  <section class="page" id="p-instellingen" data-title="Instellingen" hidden>
+    <p class="group-h">Accounts</p>
+    <article class="card outlined"><div id="acc-info"></div></article>
+    <p class="group-h">Regels</p>
+    <article class="card outlined">
+      <p class="note">Hier staat hoe ik je content maak. Pas je iets aan, dan geldt het vanaf de volgende ronde voor alles.</p>
+      <div id="rules-host"></div>
+    </article>
+    <p class="group-h">Meldingen</p>
+    <article class="card outlined"><p class="note">Een seintje op je telefoon als iemand in de reacties naar een prijs, app of training vraagt.</p><div id="push-box"></div></article>
     <p class="group-h">Draait alles?</p>
     <div id="channels" style="display: grid; gap: 16px"></div>
     <article class="card outlined">
       <div id="health"></div>
     </article>
+    <p class="group-h">Inspiratie (Nadoen)</p>
+    <article class="card outlined"><div id="insp-info"></div></article>
   </section>
 
   <!-- AANLEVEREN -->
@@ -652,6 +672,7 @@ nav.navbar {
     renderPosts();
     renderAutopilot();
     renderLeads();
+    try { renderSettings(); } catch (e) { console.warn(e); }
     renderSupply();
   }
 
@@ -1634,16 +1655,9 @@ nav.navbar {
   // ---------- Regels: Kenny's rulebook, the one place every scheduled task reads first ----------
   const RULE_GROUPS = [['doelgroep', 'Voor wie'], ['schrijven', 'Schrijven'], ['beeld', 'Beeld'], ['planning', 'Planning'],
     ['routing', 'Kanalen'], ['projecten', 'Projecten'], ['ideeen', 'Ideeën'], ['grenzen', 'Vaste grenzen']];
-  $('#rules-btn').addEventListener('click', openRules);
-  function openRules() {
-    const scrim = el('div', 'scrim');
-    const sheet = el('div', 'sheet'); sheet.setAttribute('role', 'dialog'); sheet.setAttribute('aria-modal', 'true'); sheet.setAttribute('aria-label', 'Regels');
-    const head = el('div', 'sheet-head');
-    const ht = el('h2', null, 'Regels'); ht.appendChild(el('p', null, 'Hier staat hoe ik je content maak. Pas je iets aan, dan geldt het vanaf de volgende ronde voor alles.'));
-    const close = el('button', 'icon-btn'); close.setAttribute('aria-label', 'Sluiten');
-    close.innerHTML = '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>';
-    head.append(ht, close);
-    const body = el('div', 'sheet-body');
+  $('#settings-btn').addEventListener('click', () => show('instellingen'));
+  function renderRules() {
+    const host = $('#rules-host'); if (!host) return;
     const wrap = el('div', 'rules');
     const status = el('p', 'note');
     const openGroups = new Set(['doelgroep']);
@@ -1710,14 +1724,31 @@ nav.navbar {
       if (!data.rulebook) wrap.appendChild(el('p', 'note', 'Regels nog niet geladen. Ververs de app.'));
     };
     draw();
-    body.append(wrap, status);
-    sheet.append(head, body);
-    scrim.appendChild(sheet); document.body.appendChild(scrim); document.body.style.overflow = 'hidden';
-    const shut = () => { scrim.remove(); document.body.style.overflow = ''; document.removeEventListener('keydown', esc); };
-    const esc = (e) => { if (e.key === 'Escape') shut(); };
-    document.addEventListener('keydown', esc);
-    close.addEventListener('click', shut);
-    scrim.addEventListener('click', (e) => { if (e.target === scrim) shut(); });
+    host.replaceChildren(wrap, status);
+  }
+  const ago = (t) => { if (!t) return null; const d = Math.floor((Date.now() - new Date(t).getTime()) / 86400000); return d <= 0 ? 'vandaag' : d === 1 ? 'gisteren' : d + ' dagen geleden'; };
+  function renderSettings() {
+    renderRules();
+    const ai = data.accounts_info || {};
+    const rows = [];
+    const row = (ico, name, line, warn) => { const r = el('div', 'acc-row'); const t = el('div'); t.append(el('b', null, name), el('span', 'k' + (warn ? ' warn' : ''), line)); r.append(ico, t); return r; };
+    (ai.instagram || []).forEach((a) => {
+      const lp = a.last_post ? 'laatste post ' + ago(a.last_post) : 'nog niets geplaatst';
+      rows.push(row(chIcon(a.username), a.username, 'Instagram · verbonden · ' + lp));
+    });
+    const li = ai.linkedin || {};
+    if (li.token_set_at) {
+      const left = Math.round((new Date(li.token_set_at).getTime() + (Number(li.expires_days) || 60) * 86400000 - Date.now()) / 86400000);
+      const r = row(chIcon('linkedin'), 'LinkedIn (Kenny)', left > 10 ? 'verbonden · sleutel nog ' + left + ' dagen geldig' : 'sleutel verloopt over ' + Math.max(0, left) + ' dagen: vernieuwen', left <= 10);
+      rows.push(r);
+    }
+    const tt = el('span', 'ch-ico', 'tt'); tt.style.background = '#5f5953';
+    rows.push(row(tt, 'TikTok (motokenn00)', 'nog niet gekoppeld · reels worden alleen klaargezet'));
+    $('#acc-info').replaceChildren(...rows, el('p', 'note', 'Een account toevoegen of opnieuw koppelen doe je zelf (inloggen en toestemming geven). Vraag het in de chat, dan zet ik de stappen voor je klaar.'));
+    const insp = (ai.inspiration || []);
+    const byAcc = {}; insp.forEach((x) => { (byAcc[x.for] = byAcc[x.for] || []).push(x.handle); });
+    $('#insp-info').replaceChildren(...Object.keys(byAcc).map((k) => { const r = el('div', 'acc-row'); const t = el('div'); t.append(el('b', null, 'Voor ' + k), el('span', 'k', byAcc[k].map((h) => '@' + h).join(' · '))); r.append(chIcon(k), t); return r; }),
+      el('p', 'note', 'Grote accounts waar ik formats van leer. Andere accounts? Zet ze in een Idee.'));
   }
 
   // Upload straight from this device into the private inbox (app/), optionally linked to a checklist item.
