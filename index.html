@@ -898,7 +898,7 @@ nav.navbar {
     const head = el('div', 'head');
     const time = String(r.scheduled || '').slice(11, 16);
     head.append(el('b', null, time), chIcon(k));
-    if (mirror) head.appendChild(chIcon('linkedin'));
+    if (mirror && mirror.status !== 'cancelled') head.appendChild(chIcon('linkedin'));
     head.appendChild(el('span', null, acctOf(r) + ' · ' + r.type));
     if (!mirror) { const [t, cls] = STATUS[r.status] || [r.status, '']; const p = el('span', 'pill ' + cls, t); p.style.marginLeft = 'auto'; head.appendChild(p); }
     card.appendChild(head);
@@ -936,7 +936,7 @@ nav.navbar {
       });
       card.appendChild(strip);
       const docT = r.doc_title || (mirror && mirror.doc_title);
-      card.appendChild(el('p', 'note', (media.length === 1 ? (isVideo(media[0]) ? '1 video' : '1 foto') : media.length + ' beelden') + (mirror ? ' · zelfde beeld en tekst op beide kanalen' : '') + (docT && !mirror ? ' · ' + docT : '')));
+      card.appendChild(el('p', 'note', (media.length === 1 ? (isVideo(media[0]) ? '1 video' : '1 foto') : media.length + ' beelden') + (mirror && mirror.status !== 'cancelled' ? ' · zelfde beeld en tekst op beide kanalen' : '') + (docT && !mirror ? ' · ' + docT : '')));
     }
     if (mirror) {
       const chans = el('div', 'chans');
