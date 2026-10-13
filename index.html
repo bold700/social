@@ -338,10 +338,13 @@ input, textarea, select { font-size: max(16px, 1em); }
 .composer textarea:focus { outline: 2px solid var(--primary); border-color: transparent; }
 .idea-drop { display: grid; place-items: center; min-height: 180px; border: 1.5px dashed var(--outline); border-radius: 16px; color: var(--primary); font-weight: 500; cursor: pointer; overflow: hidden; text-align: center; padding: 12px; }
 .idea-drop img, .idea-drop video { max-width: 100%; max-height: 42vh; border-radius: 12px; display: block; }
-.filter-row { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; min-width: 0; }
-.sort-sel { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--on-variant); justify-self: end; }
-@media (min-width: 600px) { .filter-row { grid-template-columns: minmax(0, 1fr) auto; align-items: center; } .filter-row .chips { margin: 0; padding: 0; } }
-.sort-sel select { height: 36px; border-radius: 18px; border: 1px solid var(--outline-variant); background: var(--surface); color: var(--on-surface); padding: 0 12px; font: inherit; font-size: 14px; cursor: pointer; }
+.filter-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: center; min-width: 0; }
+.sort-wrap { position: relative; justify-self: end; }
+#sort.active { color: var(--primary); background: var(--primary-cont); }
+.sort-menu { position: absolute; right: 0; top: 44px; z-index: 20; min-width: 200px; background: var(--surface-cont-high); border-radius: 12px; box-shadow: 0 4px 16px rgba(43, 42, 40, .35); padding: 6px 0; display: grid; }
+.sort-menu button { border: 0; background: none; color: var(--on-surface); font: inherit; font-size: 14px; text-align: left; padding: 10px 16px 10px 40px; cursor: pointer; position: relative; }
+.sort-menu button:hover { background: color-mix(in srgb, var(--on-surface) 8%, transparent); }
+.sort-menu button[aria-checked="true"]::before { content: '✓'; position: absolute; left: 16px; color: var(--primary); }
 .rules { display: grid; gap: 8px; }
 .acc-row { display: flex; gap: 12px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--outline-variant); }
 .acc-row:last-of-type { border-bottom: 0; }
@@ -502,13 +505,16 @@ nav.navbar {
     <div class="pane" id="seg-geplaatst" style="display: grid; gap: 16px" hidden>
       <div class="filter-row">
         <div class="chips" id="acc-chips" role="group" aria-label="Account"></div>
-        <label class="sort-sel"><span>Sorteer</span>
-          <select id="sort" aria-label="Sorteren">
-            <option value="posted">Nieuwste</option>
-            <option value="reach">Meeste bereik</option>
-            <option value="engagement_rate">Meeste engagement</option>
-          </select>
-        </label>
+        <div class="sort-wrap">
+          <button class="icon-btn" id="sort" aria-label="Sorteren" aria-haspopup="menu" aria-expanded="false">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M3 18h6v-2H3v2zM3 6v2h18V6H3zm0 7h12v-2H3v2z"/></svg>
+          </button>
+          <div class="sort-menu" id="sort-menu" role="menu" hidden>
+            <button role="menuitemradio" data-sort="posted" aria-checked="true">Nieuwste</button>
+            <button role="menuitemradio" data-sort="reach" aria-checked="false">Meeste bereik</button>
+            <button role="menuitemradio" data-sort="engagement_rate" aria-checked="false">Meeste engagement</button>
+          </div>
+        </div>
       </div>
       <article class="card"><div class="list" id="posts"></div></article>
     </div>
@@ -842,7 +848,17 @@ nav.navbar {
     }
     drawPosts();
   }
-  $('#sort').addEventListener('change', (e) => { postState.sort = e.target.value; drawPosts(); });
+  const sortMenu = $('#sort-menu');
+  const closeSort = () => { sortMenu.hidden = true; $('#sort').setAttribute('aria-expanded', 'false'); };
+  $('#sort').addEventListener('click', (e) => { e.stopPropagation(); const open = sortMenu.hidden; sortMenu.hidden = !open; $('#sort').setAttribute('aria-expanded', String(open)); });
+  sortMenu.querySelectorAll('button').forEach((b) => b.addEventListener('click', () => {
+    postState.sort = b.dataset.sort;
+    sortMenu.querySelectorAll('button').forEach((o) => o.setAttribute('aria-checked', String(o === b)));
+    $('#sort').classList.toggle('active', b.dataset.sort !== 'posted');
+    closeSort(); drawPosts();
+  }));
+  document.addEventListener('click', (e) => { if (!sortMenu.hidden && !e.target.closest('.sort-wrap')) closeSort(); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeSort(); });
 
   // Small 4:5 preview that opens all images of a post.
   function thumbBtn(media, label, rows) {
