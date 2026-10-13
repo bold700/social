@@ -342,6 +342,15 @@ input, textarea, select { font-size: max(16px, 1em); }
 .idea-form textarea { min-height: 96px; resize: vertical; border-radius: 12px; border: 1px solid var(--outline); background: var(--surface); color: var(--on-surface); padding: 12px 14px; font: inherit; font-size: 16px; }
 .idea-form textarea:focus { outline: 2px solid var(--primary); border-color: transparent; }
 .my-ideas { display: grid; gap: 12px; }
+.idea-box { border: 1px solid var(--outline-variant); border-radius: 16px; overflow: hidden; }
+.ib-sec { padding: 12px 14px; display: grid; gap: 8px; }
+.ib-done { background: var(--surface-cont-high); }
+.ib-lab { font-size: 11px; font-weight: 500; letter-spacing: .06em; text-transform: uppercase; color: var(--on-variant); }
+.ib-row { display: flex; gap: 12px; align-items: flex-start; }
+.ib-row .tmb { width: 64px; height: 80px; border-radius: 10px; object-fit: cover; flex: none; background: var(--surface-cont-high); }
+.idea-box .tx { font-size: 14px; line-height: 20px; white-space: pre-line; word-break: break-word; }
+.idea-box .tx.muted { color: var(--on-variant); }
+.idea-box .tx a { color: var(--primary); text-decoration: none; font-weight: 500; }
 .my-idea { display: grid; grid-template-columns: 72px 1fr; gap: 12px; align-items: start; padding-top: 12px; border-top: 1px solid var(--outline-variant); }
 .my-idea:first-child { border-top: 0; padding-top: 0; }
 .my-idea.notumb { grid-template-columns: 1fr; }
@@ -1507,23 +1516,41 @@ nav.navbar {
     c.append(el('h2', 'title', 'Jouw ideeën (' + msgs.length + ')'));
     if (!msgs.length) { c.appendChild(el('p', 'note', 'Zie je iets goeds? Tik op Idee, zet er een beeld of link bij en een zin wat je ermee wilt. Ik pak het op.')); return c; }
     const list = el('div', 'my-ideas');
+    // Text with links shown as short, tappable source names instead of long URLs.
+    const linked = (cls, t) => {
+      const d = el('div', cls); let last = 0; const re = /https?:\/\/[^\s)]+/g; let mm;
+      while ((mm = re.exec(t))) {
+        d.appendChild(document.createTextNode(t.slice(last, mm.index)));
+        const a = el('a', null, mm[0].replace(/^https?:\/\/(www\.)?/, '').split('/')[0]); a.href = mm[0]; a.target = '_blank'; a.rel = 'noopener';
+        d.appendChild(a); last = mm.index + mm[0].length;
+      }
+      d.appendChild(document.createTextNode(t.slice(last))); return d;
+    };
     msgs.forEach((m) => {
-      const it = el('div', 'my-idea');
+      const it = el('div', 'idea-box');
+      const d = new Date(m.created_at);
+      const mine = el('div', 'ib-sec');
+      mine.appendChild(el('span', 'ib-lab', 'Jouw idee · ' + d.getDate() + ' ' + MONTHS[d.getMonth()]));
+      const row = el('div', 'ib-row');
       if (m.media_url) {
         const t = isVid(m.upload_path) ? el('video', 'tmb') : el('img', 'tmb');
         if (t.tagName === 'VIDEO') { t.muted = true; t.playsInline = true; t.preload = 'metadata'; t.src = m.media_url + '#t=0.5'; }
         else { t.src = m.media_url; t.alt = ''; t.loading = 'lazy'; }
-        it.appendChild(t);
-      } else it.classList.add('notumb');
-      const box = el('div');
+        row.appendChild(t);
+      }
       const txt = String(m.text || '').replace(/\s*\[bijlage: [^\]]+\]/, '').trim();
       const url = (txt.match(/https?:\/\/\S+/) || [])[0];
-      box.appendChild(el('div', 'tx', url ? txt.replace(url, '').replace(/\s+—\s*$/, '').trim() || 'Link' : (txt || 'Beeld zonder tekst')));
-      if (url) { const a = el('a', 'link-btn', 'Bekijk het origineel'); a.href = url; a.target = '_blank'; a.rel = 'noopener'; box.appendChild(a); }
-      const d = new Date(m.created_at);
-      box.appendChild(el('span', 'k', d.getDate() + ' ' + MONTHS[d.getMonth()] + (m.status === 'new' ? ' · ✓ ontvangen · ik pak het op ' + nextRead(m.created_at) : m.reply ? '' : ' · ✓ opgepakt')));
-      if (m.reply) box.appendChild(el('div', 'rep', m.reply));
-      it.appendChild(box); list.appendChild(it);
+      const tb = el('div');
+      tb.appendChild(el('div', 'tx', url ? txt.replace(url, '').trim() || 'Link' : (txt || 'Beeld zonder tekst')));
+      if (url) { const a = el('a', 'link-btn', 'Bekijk het origineel'); a.href = url; a.target = '_blank'; a.rel = 'noopener'; tb.appendChild(a); }
+      row.appendChild(tb); mine.appendChild(row); it.appendChild(mine);
+      const done = el('div', 'ib-sec ib-done');
+      done.appendChild(el('span', 'ib-lab', 'Wat ik ermee deed'));
+      if (m.status === 'new') done.appendChild(el('div', 'tx muted', '✓ Ontvangen. Ik pak het op ' + nextRead(m.created_at) + '.'));
+      else if (m.reply) done.appendChild(linked('tx', m.reply));
+      else done.appendChild(el('div', 'tx muted', '✓ Opgepakt.'));
+      it.appendChild(done);
+      list.appendChild(it);
     });
     c.appendChild(list);
     return c;
