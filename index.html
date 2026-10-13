@@ -390,6 +390,7 @@ nav.navbar {
   display: grid; grid-template-columns: repeat(4, 1fr);
   padding: 12px 0 calc(env(safe-area-inset-bottom, 0px) + 12px);
 }
+.nav-item.nav-settings { display: none; }
 .nav-item { border: 0; background: none; display: grid; justify-items: center; gap: 4px; cursor: pointer; padding: 0; font-size: 12px; font-weight: 500; letter-spacing: 0.5px; color: var(--on-variant); }
 .nav-ind { width: 64px; height: 32px; border-radius: 16px; display: grid; place-items: center; transition: background .2s; }
 .nav-ind svg { width: 24px; height: 24px; }
@@ -402,8 +403,10 @@ nav.navbar {
   nav.navbar {
     top: 0; right: auto; width: 88px; background: var(--surface-cont-low);
     grid-template-columns: none; grid-auto-rows: min-content; align-content: start; gap: 12px;
-    padding: 92px 0 24px;
+    padding: 92px 0 24px; display: flex; flex-direction: column;
   }
+  .nav-item.nav-settings { display: grid; margin-top: auto; }
+  #settings-btn { display: none; }
   .nav-ind { width: 56px; height: 32px; }
   .nav-item { gap: 4px; padding: 0 4px; text-align: center; }
   .nav-item:hover .nav-ind { background: color-mix(in srgb, var(--on-surface) 8%, transparent); }
@@ -552,6 +555,7 @@ nav.navbar {
   <button class="nav-item" data-page="content"><span class="nav-ind"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M19 4h-1V2h-2v2H8V2H6v2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zm0 16H5V10h14v10zM9 14H7v-2h2v2zm4 0h-2v-2h2v2zm4 0h-2v-2h2v2zm-8 4H7v-2h2v2zm4 0h-2v-2h2v2zm4 0h-2v-2h2v2z"/></svg></span>Content</button>
   <button class="nav-item" data-page="leads"><span class="nav-ind"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 22a2 2 0 0 0 2-2h-4a2 2 0 0 0 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4a1.5 1.5 0 0 0-3 0v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2zm-2 1H8v-6c0-2.48 1.51-4.5 4-4.5s4 2.02 4 4.5v6z"/></svg></span>Leads</button>
   <button class="nav-item" data-page="aanleveren"><span class="nav-ind"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 15.2a3.2 3.2 0 1 0 0-6.4 3.2 3.2 0 0 0 0 6.4zM9 2 7.17 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-3.17L15 2H9zm3 15a5 5 0 1 1 0-10 5 5 0 0 1 0 10z"/></svg></span>Aanleveren</button>
+  <button class="nav-item nav-settings" data-page="instellingen"><span class="nav-ind"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M19.14 12.94c.04-.31.06-.63.06-.94s-.02-.63-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.49.49 0 0 0-.59-.22l-2.39.96a7 7 0 0 0-1.62-.94l-.36-2.54A.48.48 0 0 0 13.92 2h-3.84a.48.48 0 0 0-.48.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96a.49.49 0 0 0-.59.22L2.72 8.47a.49.49 0 0 0 .12.61l2.03 1.58c-.05.31-.07.63-.07.94s.02.63.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.25.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32a.49.49 0 0 0-.12-.61l-2.01-1.58zM12 15.6A3.6 3.6 0 1 1 12 8.4a3.6 3.6 0 0 1 0 7.2z"/></svg></span>Instellingen</button>
 </nav>
 
 <script>
