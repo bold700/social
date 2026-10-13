@@ -338,6 +338,10 @@ input, textarea, select { font-size: max(16px, 1em); }
 .composer textarea:focus { outline: 2px solid var(--primary); border-color: transparent; }
 .idea-drop { display: grid; place-items: center; min-height: 180px; border: 1.5px dashed var(--outline); border-radius: 16px; color: var(--primary); font-weight: 500; cursor: pointer; overflow: hidden; text-align: center; padding: 12px; }
 .idea-drop img, .idea-drop video { max-width: 100%; max-height: 42vh; border-radius: 12px; display: block; }
+.filter-row { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; min-width: 0; }
+.sort-sel { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--on-variant); justify-self: end; }
+@media (min-width: 600px) { .filter-row { grid-template-columns: minmax(0, 1fr) auto; align-items: center; } .filter-row .chips { margin: 0; padding: 0; } }
+.sort-sel select { height: 36px; border-radius: 18px; border: 1px solid var(--outline-variant); background: var(--surface); color: var(--on-surface); padding: 0 12px; font: inherit; font-size: 14px; cursor: pointer; }
 .rules { display: grid; gap: 8px; }
 .acc-row { display: flex; gap: 12px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--outline-variant); }
 .acc-row:last-of-type { border-bottom: 0; }
@@ -496,11 +500,15 @@ nav.navbar {
       <div id="plan-list" style="display: grid; gap: 16px"></div>
     </div>
     <div class="pane" id="seg-geplaatst" style="display: grid; gap: 16px" hidden>
-      <div class="chips" id="acc-chips" role="group" aria-label="Kanaal"></div>
-      <div class="segmented" role="group" aria-label="Sorteren" id="sort">
-        <button data-sort="posted" aria-pressed="true">Nieuwste</button>
-        <button data-sort="reach" aria-pressed="false">Bereik</button>
-        <button data-sort="engagement_rate" aria-pressed="false">Engagement</button>
+      <div class="filter-row">
+        <div class="chips" id="acc-chips" role="group" aria-label="Account"></div>
+        <label class="sort-sel"><span>Sorteer</span>
+          <select id="sort" aria-label="Sorteren">
+            <option value="posted">Nieuwste</option>
+            <option value="reach">Meeste bereik</option>
+            <option value="engagement_rate">Meeste engagement</option>
+          </select>
+        </label>
       </div>
       <article class="card"><div class="list" id="posts"></div></article>
     </div>
@@ -834,11 +842,8 @@ nav.navbar {
     }
     drawPosts();
   }
-  document.querySelectorAll('#sort button').forEach((b) => b.addEventListener('click', () => {
-    postState.sort = b.dataset.sort;
-    document.querySelectorAll('#sort button').forEach((o) => o.setAttribute('aria-pressed', String(o === b)));
-    drawPosts();
-  }));
+  $('#sort').addEventListener('change', (e) => { postState.sort = e.target.value; drawPosts(); });
+
   // Small 4:5 preview that opens all images of a post.
   function thumbBtn(media, label, rows) {
     const tb = el('button', 'qthumb'); tb.setAttribute('aria-label', 'Bekijk ' + (media.length === 1 ? 'het beeld' : 'de ' + media.length + ' beelden'));
