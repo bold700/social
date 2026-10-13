@@ -884,6 +884,8 @@ nav.navbar {
       const media = ((r.li ? (data.media || {})[r.id] : (data.post_media || {})[r.ig_media_id]) || []).filter(Boolean);
       if (media.length) { it.classList.add('has-thumb'); it.append(thumbBtn(media, r.account + ' · ' + fDate(r.posted), 3)); }
       it.append(top, txt, mt);
+      const tt = !r.li && (data.tt_by_media || {})[r.ig_media_id];
+      if (tt) { const row = el('div', 'li-also'); const ic = el('span', 'ch-ico', 'tt'); ic.style.background = LI_BLUE; row.append(ic, el('span', null, 'Ook op TikTok'), el('span', 'k', '· geen cijfers')); it.append(row); }
       const lp = !r.li && liBy[r.ig_media_id];
       if (lp) {
         const row = el('div', 'li-also');
