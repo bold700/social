@@ -338,6 +338,23 @@ input, textarea, select { font-size: max(16px, 1em); }
 .composer textarea:focus { outline: 2px solid var(--primary); border-color: transparent; }
 .idea-drop { display: grid; place-items: center; min-height: 180px; border: 1.5px dashed var(--outline); border-radius: 16px; color: var(--primary); font-weight: 500; cursor: pointer; overflow: hidden; text-align: center; padding: 12px; }
 .idea-drop img, .idea-drop video { max-width: 100%; max-height: 42vh; border-radius: 12px; display: block; }
+.rules { display: grid; gap: 8px; }
+.rules details { border: 1px solid var(--outline-variant); border-radius: 14px; }
+.rules summary { list-style: none; cursor: pointer; padding: 12px 14px; display: flex; align-items: center; font-weight: 500; font-size: 15px; }
+.rules summary::-webkit-details-marker { display: none; }
+.rules summary .n { font-size: 12px; color: var(--on-variant); font-weight: 400; margin-left: auto; }
+.rules summary::after { content: '▾'; color: var(--on-variant); margin-left: 8px; }
+.rules details[open] summary::after { content: '▴'; }
+.rule { display: grid; grid-template-columns: 1fr auto; gap: 8px; padding: 10px 14px; border-top: 1px solid var(--outline-variant); align-items: start; }
+.rule .rt { font-size: 14px; line-height: 20px; word-break: break-word; }
+.rule .rm { display: block; font-size: 11px; color: var(--on-variant); margin-top: 2px; }
+.rule .ra { display: flex; gap: 2px; }
+.rule .ra .icon-btn { width: 36px; height: 36px; }
+.rule-edit { display: grid; gap: 8px; padding: 10px 14px; border-top: 1px solid var(--outline-variant); }
+.rule-edit textarea { min-height: 72px; resize: vertical; border-radius: 12px; border: 1px solid var(--outline); background: var(--surface); color: var(--on-surface); padding: 10px 12px; font: inherit; font-size: 16px; }
+.rule-edit .pactions { display: flex; gap: 8px; }
+.rules .add { border: 0; background: none; color: var(--primary); font: inherit; font-size: 14px; font-weight: 500; padding: 12px 14px; text-align: left; width: 100%; border-top: 1px solid var(--outline-variant); cursor: pointer; }
+.rules .locked { padding: 10px 14px; font-size: 12px; color: var(--on-variant); border-top: 1px solid var(--outline-variant); }
 .idea-form { display: grid; gap: 12px; }
 .idea-form textarea { min-height: 96px; resize: vertical; border-radius: 12px; border: 1px solid var(--outline); background: var(--surface); color: var(--on-surface); padding: 12px 14px; font: inherit; font-size: 16px; }
 .idea-form textarea:focus { outline: 2px solid var(--primary); border-color: transparent; }
@@ -407,6 +424,9 @@ nav.navbar {
   <svg class="logo" viewBox="0 0 32 34" aria-hidden="true"><path fill="var(--primary)" d="M26.118 15.9781C27.9616 15.2318 29.3663 14.1344 30.4198 12.6859C31.4733 11.2373 32 9.52538 32 7.50617C32 5.09191 31.0343 3.20439 29.1029 1.93141C27.2593 0.702332 24.7133 0.0438957 21.3772 0H0V8.2524H6.2332V6.2332H11.9396L0 33.0096H15.7147C20.192 33.0096 23.7915 32.1317 26.513 30.3759C29.2346 28.62 30.5514 26.0302 30.5514 22.6063C30.5514 20.9822 30.1564 19.6653 29.4101 18.524C28.6639 17.3827 27.5665 16.5487 26.118 15.9781ZM21.2016 26.0302C20.0165 26.8642 18.3484 27.2593 16.1975 27.2593H9.34979L12.9931 19.0946H18.0412C21.3333 19.0946 23.0014 20.2359 23.0014 22.4746C23.0014 24.0549 22.3868 25.1962 21.2016 26.0302ZM22.3429 12.4225C21.2455 13.1687 19.6653 13.5638 17.6461 13.5638H15.4513L18.6996 6.27709H19.1824C22.4307 6.27709 24.0549 7.2428 24.0549 9.17421C24.011 10.5789 23.4403 11.6763 22.3429 12.4225Z"/></svg>
   <h1 id="page-title">Resultaten</h1>
   <button class="btn tonal" id="install" hidden style="height: 32px; padding: 0 16px">Installeer als app</button>
+  <button class="icon-btn" id="rules-btn" aria-label="Regels">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M3 17v2h6v-2H3zM3 5v2h10V5H3zm10 16v-2h8v-2h-8v-2h-2v6h2zM7 9v2H3v2h4v2h2V9H7zm14 4v-2H11v2h10zm-6-4h2V7h4V5h-4V3h-2v6z"/></svg>
+  </button>
   <button class="icon-btn" id="refresh" aria-label="Vernieuwen">
     <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M17.65 6.35A7.96 7.96 0 0 0 12 4a8 8 0 1 0 7.74 10h-2.08A6 6 0 1 1 12 6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
   </button>
@@ -1602,6 +1622,95 @@ nav.navbar {
         show('content'); showSeg('ideeen'); renderPipeline(); window.scrollTo(0, 0);
       } catch (e) { status.textContent = 'Opslaan lukte niet. Probeer het opnieuw.'; save.disabled = false; }
     });
+    sheet.append(head, body);
+    scrim.appendChild(sheet); document.body.appendChild(scrim); document.body.style.overflow = 'hidden';
+    const shut = () => { scrim.remove(); document.body.style.overflow = ''; document.removeEventListener('keydown', esc); };
+    const esc = (e) => { if (e.key === 'Escape') shut(); };
+    document.addEventListener('keydown', esc);
+    close.addEventListener('click', shut);
+    scrim.addEventListener('click', (e) => { if (e.target === scrim) shut(); });
+  }
+
+  // ---------- Regels: Kenny's rulebook, the one place every scheduled task reads first ----------
+  const RULE_GROUPS = [['doelgroep', 'Voor wie'], ['schrijven', 'Schrijven'], ['beeld', 'Beeld'], ['planning', 'Planning'],
+    ['routing', 'Kanalen'], ['projecten', 'Projecten'], ['ideeen', 'Ideeën'], ['grenzen', 'Vaste grenzen']];
+  $('#rules-btn').addEventListener('click', openRules);
+  function openRules() {
+    const scrim = el('div', 'scrim');
+    const sheet = el('div', 'sheet'); sheet.setAttribute('role', 'dialog'); sheet.setAttribute('aria-modal', 'true'); sheet.setAttribute('aria-label', 'Regels');
+    const head = el('div', 'sheet-head');
+    const ht = el('h2', null, 'Regels'); ht.appendChild(el('p', null, 'Hier staat hoe ik je content maak. Pas je iets aan, dan geldt het vanaf de volgende ronde voor alles.'));
+    const close = el('button', 'icon-btn'); close.setAttribute('aria-label', 'Sluiten');
+    close.innerHTML = '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>';
+    head.append(ht, close);
+    const body = el('div', 'sheet-body');
+    const wrap = el('div', 'rules');
+    const status = el('p', 'note');
+    const openGroups = new Set(['doelgroep']);
+    const send = async (payload) => {
+      status.textContent = 'Opslaan…';
+      try {
+        const res = await fetch(API.replace('action=app', 'action=app_rule'), { method: 'POST', headers: { 'x-app-key': key, 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+        const j = await res.json();
+        if (!res.ok || !j.ok) throw new Error(j.error || 'HTTP ' + res.status);
+        data.rulebook = j.rulebook; store.set('b7data', JSON.stringify(data));
+        status.textContent = 'Opgeslagen.'; draw(); return true;
+      } catch (e) { status.textContent = 'Opslaan lukte niet. Probeer het opnieuw.'; return false; }
+    };
+    const editor = (value, onSave, onCancel) => {
+      const box = el('div', 'rule-edit');
+      const ta = el('textarea'); ta.value = value || ''; ta.setAttribute('aria-label', 'Regel');
+      const row = el('div', 'pactions');
+      const sv = el('button', 'btn', 'Opslaan'); const cc = el('button', 'tbtn', 'Annuleren');
+      sv.addEventListener('click', async () => { if (!ta.value.trim()) return; sv.disabled = true; if (!(await onSave(ta.value))) sv.disabled = false; });
+      cc.addEventListener('click', onCancel);
+      row.append(sv, cc); box.append(ta, row);
+      setTimeout(() => ta.focus(), 30);
+      return box;
+    };
+    const draw = () => {
+      const rb = data.rulebook || {};
+      wrap.replaceChildren(...RULE_GROUPS.map(([g, label]) => {
+        const list = Array.isArray(rb[g]) ? rb[g] : [];
+        const det = el('details'); if (openGroups.has(g)) det.open = true;
+        det.addEventListener('toggle', () => { if (det.open) openGroups.add(g); else openGroups.delete(g); });
+        const sm = el('summary'); sm.append(el('span', null, label), el('span', 'n', list.length + (list.length === 1 ? ' regel' : ' regels')));
+        det.appendChild(sm);
+        const locked = g === 'grenzen';
+        list.forEach((t, i) => {
+          const m = String(t).match(/^(.*?)\s*\((Kenny, [^)]*)\)\s*$/s);
+          const row = el('div', 'rule');
+          const tx = el('div'); tx.appendChild(el('span', 'rt', m ? m[1] : t)); if (m) tx.appendChild(el('span', 'rm', m[2]));
+          row.appendChild(tx);
+          if (!locked) {
+            const acts = el('div', 'ra');
+            const eb = el('button', 'icon-btn'); eb.setAttribute('aria-label', 'Regel aanpassen');
+            eb.innerHTML = '<svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>';
+            const db = el('button', 'icon-btn'); db.setAttribute('aria-label', 'Regel weghalen');
+            db.innerHTML = '<svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>';
+            eb.addEventListener('click', () => row.replaceWith(editor(m ? m[1] : t, (v) => send({ op: 'edit', group: g, index: i, text: v }), draw)));
+            db.addEventListener('click', () => {
+              const cf = el('div', 'rule-edit'); cf.appendChild(el('div', 'rt', 'Weghalen: "' + (m ? m[1] : t).slice(0, 80) + (String(m ? m[1] : t).length > 80 ? '…' : '') + '"?'));
+              const r2 = el('div', 'pactions'); const yes = el('button', 'tbtn danger', 'Weghalen'); const no = el('button', 'tbtn', 'Toch houden');
+              yes.addEventListener('click', async () => { yes.disabled = true; await send({ op: 'delete', group: g, index: i }); });
+              no.addEventListener('click', draw); r2.append(yes, no); cf.appendChild(r2); row.replaceWith(cf);
+            });
+            acts.append(eb, db); row.appendChild(acts);
+          }
+          det.appendChild(row);
+        });
+        if (locked) det.appendChild(el('div', 'locked', 'Vaste veiligheidsregels. Die pas ik alleen aan als je het hier in de chat vraagt.'));
+        else {
+          const add = el('button', 'add', '+ Regel toevoegen');
+          add.addEventListener('click', () => add.replaceWith(editor('', (v) => send({ op: 'add', group: g, text: v }), draw)));
+          det.appendChild(add);
+        }
+        return det;
+      }));
+      if (!data.rulebook) wrap.appendChild(el('p', 'note', 'Regels nog niet geladen. Ververs de app.'));
+    };
+    draw();
+    body.append(wrap, status);
     sheet.append(head, body);
     scrim.appendChild(sheet); document.body.appendChild(scrim); document.body.style.overflow = 'hidden';
     const shut = () => { scrim.remove(); document.body.style.overflow = ''; document.removeEventListener('keydown', esc); };
