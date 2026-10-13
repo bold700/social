@@ -304,6 +304,9 @@ input, textarea, select { font-size: max(16px, 1em); }
 .chans { display: grid; gap: 12px; }
 .pactions.choose { align-items: center; flex-wrap: wrap; }
 .pactions.choose .note { margin: 0 4px 0 0; }
+.li-also { grid-column: 2; display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--on-variant); }
+.item:not(.has-thumb) .li-also { grid-column: 1 / -1; }
+.li-also a { color: var(--primary); text-decoration: none; font-weight: 500; }
 .mirror-row { display: flex; align-items: center; gap: 8px; padding: 10px 0 2px; border-top: 1px solid var(--outline-variant); font-size: 13px; color: var(--on-variant); min-width: 0; }
 .mirror-row .ml { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .mirror-row.off .ml { text-decoration: line-through; }
@@ -797,7 +800,10 @@ nav.navbar {
 
   function drawPosts() {
     // LinkedIn has no stats via the free API; show its published posts from the queue.
-    const li = (data.queue || []).filter((q) => q.channel === 'LinkedIn' && q.status === 'published')
+    // A LinkedIn post that mirrors an Instagram post is shown inside that post, not as its own row.
+    const liBy = data.li_by_media || {};
+    const paired = new Set(Object.values(liBy).map((x) => x.id));
+    const li = (data.queue || []).filter((q) => q.channel === 'LinkedIn' && q.status === 'published' && !paired.has(q.id))
       .map((q) => ({ account: 'linkedin', li: true, id: q.id, format: q.type, posted: String(q.scheduled).slice(0, 10), caption: q.preview }));
     let rows = (data.posts || []).concat(li);
     if (postState.acc) rows = rows.filter((r) => r.account === postState.acc);
@@ -824,6 +830,16 @@ nav.navbar {
       const media = ((r.li ? (data.media || {})[r.id] : (data.post_media || {})[r.ig_media_id]) || []).filter(Boolean);
       if (media.length) { it.classList.add('has-thumb'); it.append(thumbBtn(media, r.account + ' · ' + fDate(r.posted), 3)); }
       it.append(top, txt, mt);
+      const lp = !r.li && liBy[r.ig_media_id];
+      if (lp) {
+        const row = el('div', 'li-also');
+        row.append(chIcon('linkedin'));
+        const urn = String(lp.urn || '');
+        if (urn) { const a = el('a', null, 'Ook live op LinkedIn'); a.href = 'https://www.linkedin.com/feed/update/' + urn + '/'; a.target = '_blank'; a.rel = 'noopener'; row.append(a); }
+        else row.append(el('span', null, 'Ook live op LinkedIn'));
+        row.append(el('span', 'k', '· geen cijfers'));
+        it.append(row);
+      }
       return it;
     }));
     if (!rows.length) $('#posts').appendChild(el('p', 'note', 'Geen posts gevonden.'));
