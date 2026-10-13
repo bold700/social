@@ -1747,8 +1747,9 @@ nav.navbar {
       rows.push(r);
     }
     const tt = el('span', 'ch-ico', 'tt'); tt.style.background = '#5f5953';
-    rows.push(row(tt, 'TikTok (motokenn00)', 'nog niet gekoppeld · reels worden alleen klaargezet'));
-    $('#acc-info').replaceChildren(...rows, el('p', 'note', 'Een account toevoegen of opnieuw koppelen doe je zelf (inloggen en toestemming geven). Vraag het in de chat, dan zet ik de stappen voor je klaar.'));
+    const tk = ai.tiktok || {};
+    rows.push(row(tt, 'TikTok' + (tk.account ? ' (' + tk.account + ')' : ''), tk.connected ? 'verbonden · motokenn00-reels worden ' + (tk.mode === 'plaatsen' ? 'ook hier geplaatst' : 'alleen klaargezet') : 'nog niet gekoppeld'));
+    $('#acc-info').replaceChildren(...rows, el('p', 'note', 'Nieuw account koppelen? Vraag het in de chat.'));
     const insp = (ai.inspiration || []);
     const byAcc = {}; insp.forEach((x) => { (byAcc[x.for] = byAcc[x.for] || []).push(x.handle); });
     $('#insp-info').replaceChildren(...Object.keys(byAcc).map((k) => { const r = el('div', 'acc-row'); const t = el('div'); t.append(el('b', null, 'Voor ' + k), el('span', 'k', byAcc[k].map((h) => '@' + h).join(' · '))); r.append(chIcon(k), t); return r; }),
