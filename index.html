@@ -1287,7 +1287,7 @@ nav.navbar {
     const card = el('article', 'card ppost feed pencil-card');
     const sub = el('small', null, p.kind === 'msg' ? (p.pi.mode === 'maak' ? 'Jij vroeg: maak dit' : p.pi.mode === 'voorstel' ? 'Jij vroeg om een voorstel' : 'Jouw idee')
       : (p.c.source_handle ? 'Voorstel · naar @' + p.c.source_handle : 'Voorstel'));
-    card.appendChild(feedHead(p.acct, null, sub, el('span', 'pill', 'Potlood')));
+    card.appendChild(feedHead(p.acct, null, sub, el('span', 'pill', 'Concept')));
     const ph = el('div', 'fmedia pencil');
     ph.appendChild(el('span', 'pen', '✎'));
     if (p.kind === 'msg' && p.m.media_url) {
@@ -1380,7 +1380,7 @@ nav.navbar {
     const cancelled = inFilter.filter(isCancelled);
     const list = $('#plan-list');
     const allPencils = pencilItems(posts);
-    if (allPencils.length) $('#plan-note').textContent += ' ' + allPencils.length + (allPencils.length === 1 ? ' voorstel staat' : ' voorstellen staan') + ' in potlood. Potlood gaat pas live als er content is.';
+    if (allPencils.length) $('#plan-note').textContent += ' ' + allPencils.length + (allPencils.length === 1 ? ' voorstel staat' : ' voorstellen staan') + ' als concept. Een concept gaat pas live als er content is.';
     const pencils = allPencils.filter((x) => planFilter === 'all' || x.acct === planFilter);
     if (!shown.length && !cancelled.length && !pencils.length) { renderPipeline(); list.replaceChildren(el('p', 'note', planFilter === 'motokenn00' ? 'Voor motokenn00 staat nog niets klaar. Zet ritfoto\'s of clips in de motokenn00-map, dan plant het systeem ze in.' : 'Niets gepland voor dit account.')); return; }
     const out = []; let lastDay = '';
@@ -1812,7 +1812,7 @@ nav.navbar {
     const scrim = el('div', 'scrim');
     const sheet = el('div', 'sheet'); sheet.setAttribute('role', 'dialog'); sheet.setAttribute('aria-modal', 'true'); sheet.setAttribute('aria-label', 'Nieuw idee');
     const head = el('div', 'sheet-head');
-    const ht = el('h2', null, 'Nieuw idee'); ht.appendChild(el('p', null, 'Beeld of link plus een zin. Het komt in potlood in Concept.'));
+    const ht = el('h2', null, 'Nieuw idee'); ht.appendChild(el('p', null, 'Beeld of link plus een zin. Het komt als concept in je planning.'));
     const close = el('button', 'icon-btn'); close.setAttribute('aria-label', 'Sluiten');
     close.innerHTML = '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>';
     head.append(ht, close);
@@ -1828,7 +1828,7 @@ nav.navbar {
     // What Kenny wants: just keep it, a proposal from me, or have me make the post.
     let mode = 'idee', acct = null;
     const modes = el('div', 'idea-modes'); modes.setAttribute('role', 'group'); modes.setAttribute('aria-label', 'Wat moet ik ermee');
-    [['idee', 'Bewaar', 'Ik kijk wanneer het past'], ['voorstel', 'Doe een voorstel', 'Ik werk het uit in potlood'], ['maak', 'Maak dit', 'Ik maak de post']].forEach(([v, t, s]) => {
+    [['idee', 'Bewaar', 'Ik kijk wanneer het past'], ['voorstel', 'Doe een voorstel', 'Ik werk het uit als concept'], ['maak', 'Maak dit', 'Ik maak de post']].forEach(([v, t, s]) => {
       const b = el('button'); b.type = 'button'; b.append(el('b', null, t), el('small', null, s)); b.setAttribute('aria-pressed', String(v === mode));
       b.addEventListener('click', () => { mode = v; modes.querySelectorAll('button').forEach((x) => x.setAttribute('aria-pressed', String(x === b))); });
       modes.appendChild(b);
