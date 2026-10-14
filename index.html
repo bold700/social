@@ -342,10 +342,10 @@ input, textarea, select { font-size: max(16px, 1em); }
 .fmedia.pencil .msym.pen { font-size: 32px; width: 32px; }
 .ficons svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linejoin: round; stroke-linecap: round; }
 .ficons .sp { flex: 1; }
-.ficons .dots { display: flex; gap: 4px; position: absolute; left: 50%; transform: translateX(-50%); }
+.fmedia .dots { display: flex; gap: 4px; position: absolute; left: 50%; bottom: 10px; transform: translateX(-50%); padding: 4px 6px; border-radius: 8px; background: rgba(43, 42, 40, .45); }
 .ficons { position: relative; }
-.ficons .dots i { width: 6px; height: 6px; border-radius: 50%; background: var(--outline-variant); }
-.ficons .dots i.on { background: var(--primary); }
+.fmedia .dots i { width: 6px; height: 6px; border-radius: 50%; background: rgba(239, 229, 220, .45); }
+.fmedia .dots i.on { background: #efe5dc; }
 .ppost.pencil-card { background: transparent; outline: 1.5px dashed var(--outline-variant); outline-offset: -1.5px; }
 .ppost.pencil-card .ficons { opacity: .35; }
 .cap { font-size: 14px; line-height: 20px; margin: 0; white-space: pre-line; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
@@ -1043,7 +1043,6 @@ nav.navbar {
     const row = el('div', 'ficons'); row.setAttribute('aria-hidden', 'true');
     const ms = (n) => '<span class="msym">' + n + '</span>';
     row.innerHTML = ms('favorite') + ms('chat_bubble') + ms('repeat') + ms('send') + '<span class="sp"></span>' + ms('bookmark');
-    if (n > 1) { const d = el('span', 'dots'); for (let i = 0; i < Math.min(n, 10); i++) d.appendChild(el('i', i ? null : 'on')); row.appendChild(d); }
     return row;
   }
   function feedMedia(media, label, icons) {
@@ -1061,9 +1060,12 @@ nav.navbar {
     wrap.appendChild(sl);
     if (media.length > 1) {
       const cnt = el('span', 'cnt', '1/' + media.length); wrap.appendChild(cnt);
+      const dots = el('span', 'dots'); dots.setAttribute('aria-hidden', 'true');
+      for (let i = 0; i < Math.min(media.length, 10); i++) dots.appendChild(el('i', i ? null : 'on'));
+      wrap.appendChild(dots);
       sl.addEventListener('scroll', () => {
         const i = Math.round(sl.scrollLeft / sl.clientWidth); cnt.textContent = (i + 1) + '/' + media.length;
-        if (icons) icons.querySelectorAll('.dots i').forEach((d, j) => d.classList.toggle('on', j === i));
+        dots.querySelectorAll('i').forEach((d, j) => d.classList.toggle('on', j === i));
       }, { passive: true });
     }
     return wrap;
